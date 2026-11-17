@@ -1,0 +1,93 @@
+.shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--content-max);
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding:
+    calc(14px + var(--safe-top))
+    calc(18px + var(--safe-right))
+    calc(12px + var(--safe-bottom))
+    calc(18px + var(--safe-left));
+  overflow-x: clip;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.decorations {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cloud {
+  position: absolute;
+  width: 118px;
+  filter: blur(0.2px);
+}
+
+.cloudOne {
+  top: calc(44px + var(--safe-top));
+  left: -34px;
+  transform: rotate(-6deg);
+}
+
+.cloudTwo {
+  top: calc(240px + var(--safe-top));
+  right: -26px;
+  width: 94px;
+  transform: rotate(5deg) scaleX(-1);
+}
+
+.sparkle {
+  position: absolute;
+  color: var(--color-butter-strong);
+  font-size: 1rem;
+  line-height: 1;
+  animation: twinkle 4.5s ease-in-out infinite;
+}
+
+.sparkleOne {
+  top: calc(124px + var(--safe-top));
+  right: 26px;
+}
+
+.sparkleTwo {
+  top: calc(340px + var(--safe-top));
+  left: 18px;
+  color: var(--color-lilac-strong);
+  font-size: 0.72rem;
+  animation-delay: 1.4s;
+}
+
+.sparkleThree {
+  top: calc(480px + var(--safe-top));
+  right: 44px;
+  color: var(--color-pink-strong);
+  font-size: 0.8rem;
+  animation-delay: 2.6s;
+}
+
+.footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 18px;
+  color: var(--color-ink-faint);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}

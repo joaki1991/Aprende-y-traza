@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Paleta kawaii compartida con la interfaz web. -->
+    <color name="colorPrimary">#ff9fbe</color>
+    <color name="colorPrimaryDark">#d47e9c</color>
+    <color name="colorAccent">#63d6b1</color>
+    <color name="splashBackground">#fff6fb</color>
+</resources>

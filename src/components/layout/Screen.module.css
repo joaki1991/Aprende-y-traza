@@ -1,0 +1,7 @@
+.screen {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 18px;
+  animation: pop-in 0.45s var(--ease-soft) both;
+}

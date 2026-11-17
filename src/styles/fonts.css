@@ -1,0 +1,15 @@
+@font-face {
+  font-family: 'Fredoka Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 300 700;
+  src: url('../assets/fonts/fredoka-latin-variable.woff2') format('woff2-variations');
+}
+
+@font-face {
+  font-family: 'Nunito Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 1000;
+  src: url('../assets/fonts/nunito-latin-variable.woff2') format('woff2-variations');
+}

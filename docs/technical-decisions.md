@@ -1,0 +1,297 @@
+# Registro de decisiones técnicas (ADR)
+
+Decisiones tomadas durante el Sprint 0. Formato ligero: contexto → decisión → consecuencias. Una decisión nueva debe añadirse aquí, no solo al código.
+
+---
+
+## ADR-001 — React + Vite + TypeScript estricto
+
+**Fecha:** 2026-11-17 · **Estado:** aceptada
+
+**Contexto:** app educativa pequeña, offline, con UI muy interactiva y necesidad de iterar rápido sin backend.
+
+**Decisión:** React 19, Vite 6 y TypeScript 5.9 en modo estricto (`strict`, `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`).
+
+**Consecuencias:**
+
+- Componentes y ecosistema conocidos; build rápido.
+- El tipado estricto obliga a modelar bien contenidos y progreso desde el inicio.
+- Vite 6 y `@vitejs/plugin-react` 4.7 se eligen por compatibilidad con Node 20.15.1; las últimas majors exigen Node 20.19+/22.
+- No se usa `any` ni `@ts-ignore`.
+
+---
+
+## ADR-002 — Router propio basado en hash
+
+**Fecha:** 2026-11-17 · **Estado:** aceptada
+
+**Contexto:** la app debe funcionar en un subdirectorio, en el WebView de Capacitor y con el botón Atrás, sin configurar un servidor.
+
+**Decisión:** implementar un router mínimo en `src/app/router.ts` con `hashchange`, `useSyncExternalStore` y rutas tipadas. No se añade React Router.
+
+**Consecuencias:**
+
+- Cero dependencias y control total del comportamiento nativo.
+- Las URLs son `#/aprender/mayusculas`, estables y compartibles.
+- No hay rutas anidadas, loaders ni code splitting por ruta; no se necesitan en este alcance.
+- Añadir una ruta exige tocar varios puntos pequeños y sus pruebas.
+
+---
+
+## ADR-003 — Canvas con Pointer Events y coordenadas normalizadas
+
+**Fecha:** 2026-11-17 · **Estado:** aceptada
+
+**Contexto:** el trazado infantil necesita respuesta inmediata al dedo, soporte táctil/lápiz/ratón y resistencia a cambios de tamaño y densidad de pantalla.
+
+**Decisión:**
+
+- HTML5 Canvas 2D.
+- Pointer Events con captura del puntero y eventos coalescidos.
+- Puntos normalizados (0–1) en el modelo; píxeles solo al pintar.
+- DPR limitado a 3, `ResizeObserver` y repintado incremental.
+- `touch-action: none`, sin selección de texto ni menú contextual.
+
+**Consecuencias:**
+
+- Funciona igual en web y Android; el dibujo no se deforma al rotar o redimensionar.
+- El motor educativo del Sprint 2 puede reutilizar la geometría y el ciclo de vida.
+- Hay que gestionar manualmente cleanup, cancelación y restauración de estado.
+- Los trazos se guardan en memoria; no se persisten todavía (la pizarra es libre).
+
+---
+
+## ADR-004 — Recorridos de letras en SVG descritos como datos
+
+**Fecha:** 2026-11-17 · **Estado:** aceptada
+
+**Contexto:** las letras y números necesitan un recorrido pedagógico (inicio, dirección, orden de trazos) que el motor pueda evaluar y la UI pueda dibujar.
+
+**Decisión:** modelar `TraceStroke` con atributo `d` de `<path>` SVG, puntos de inicio/fin, dirección y orden; agruparlos en `CharacterTrace` con `viewBox` (`0 0 100 140` por convención). Los datos viven en `modules/lessons/`, separados de React y Canvas.
+
+**Consecuencias:**
+
+- Se pueden dibujar guías con SVG nítido y evaluar con la misma geometría.
+- Añadir un alfabeto es añadir datos, no duplicar pantallas.
+- En Sprint 0 solo están los tipos y el catálogo; las definiciones completas llegan en Sprint 2/4.
+- La evaluación futura deberá ser tolerante con trazos infantiles; el modelo no impone umbrales.
+
+---
+
+## ADR-005 — IndexedDB con una capa mínima propia
+
+**Fecha:** 2026-11-17 · **Estado:** aceptada
+
+**Contexto:** hay que guardar progreso y ajustes sin registro, sin backend y sin añadir peso.
+
+**Decisión:** base `aprende-y-traza` versión 1, stores `progress` y `settings`, con un wrapper propio (`storage/db.ts`) y un repositorio específico (`progress.repository.ts`). Se valida el registro al leer y se vuelve a progreso vacío si es corrupto o de versión desconocida.
+
+**Consecuencias:**
+
+- Cero dependencias (no Dexie ni `idb`).
+- Control explícito de transacciones, errores y versionchange.
+- El esquema está preparado para migraciones; hay que incrementar `DB_VERSION` y probarlas.
+- Un único registro de progreso simplifica el Sprint 0; el Sprint 5 podrá añadir stores o índices.
+
+---
+
+## ADR-006 — Tipografías locales autoalojadas
+
+**Fecha:** 2026-11-17 · **Estado:** aceptada
+
+**Contexto:** la app debe funcionar sin Internet y sin Google Fonts.
+
+**Decisión:** copiar los WOFF2 variables de **Fredoka** y **Nunito** (subconjunto latino) desde los paquetes de Fontsource a `src/assets/fonts/`, declararlos con `@font-face` y guardar las licencias OFL en `licenses/`. Se eliminan las dependencias `@fontsource-variable/*` una vez copiados los archivos.
+
+**Consecuencias:**
+
+- Sin peticiones externas ni dependencias de fuentes en runtime.
+- Solo se cargan dos archivos (≈ 30 kB y ≈ 39 kB).
+- Las actualizaciones de fuente son manuales y deben conservar la licencia.
+
+---
+
+## ADR-007 — Arte SVG local e iconos generados con Sharp
+
+**Fecha:** 2026-11-17 · **Estado:** aceptada
+
+**Contexto:** se necesitan mascota, iconos, pegatinas, iconos PWA y assets Android sin recursos remotos ni binarios difíciles de mantener.
+
+**Decisión:** dibujar mascota, iconos de UI y pegatinas como SVG/React. Generar PNG de PWA, favicons, iconos Android y splash con `scripts/generate-icons.mjs` usando Sharp (dependencia de desarrollo).
+
+**Consecuencias:**
+
+- Iconos nítidos, ligeros y versionables como código.
+- `npm run icons` reproduce todos los PNG; no se editan a mano.
+- Sharp solo se usa en desarrollo/build, no se envía al cliente.
+- Los iconos adaptativos de Android usan un primer plano transparente y fondo pastel sólido.
+
+---
+
+## ADR-008 — PWA con vite-plugin-pwa y registro manual
+
+**Fecha:** 2026-11-17 · **Estado:** aceptada
+
+**Contexto:** la app debe instalarse y funcionar offline, pero el service worker no debe interferir en el WebView de Capacitor ni en desarrollo.
+
+**Decisión:** `vite-plugin-pwa` 1.3 en modo `generateSW`, `registerType: 'autoUpdate'`, `injectRegister: null` y registro manual en `modules/pwa/registerPwa.ts`, solo si `import.meta.env.PROD` y no es plataforma nativa. Precache de JS, CSS, HTML, SVG, PNG, ICO, manifest, WOFF2 y WAV.
+
+**Consecuencias:**
+
+- Una sola build genera manifest, service worker y precache.
+- El modo offline se prueba con `npm run preview`; en desarrollo no hay caché.
+- `npm audit` reporta vulnerabilidades moderadas de `glob`/`minimatch` dentro de Workbox (herramientas de build). No afectan al runtime infantil; no se aplica `npm audit fix --force` porque degradaría Vite/PWA.
+- Si se añaden sonidos u otros formatos, hay que ampliar `globPatterns`.
+
+---
+
+## ADR-009 — Capacitor 7 para Android con botón Atrás nativo
+
+**Fecha:** 2026-11-17 · **Estado:** aceptada
+
+**Contexto:** se necesita un APK Android sin reescribir la app, en vertical, con navegación coherente.
+
+**Decisión:** Capacitor 7 (`@capacitor/core`, `@capacitor/android`, `@capacitor/cli`), `appId com.aprendeytraza.app`, `webDir dist`, orientación vertical en el manifest y `@capacitor/app` para el botón Atrás. El proyecto `android/` se versiona; los assets web copiados y los archivos de Gradle se ignoran.
+
+**Consecuencias:**
+
+- Un solo código para web y Android.
+- `npm run android:sync` es obligatorio tras cada build web.
+- Compilar requiere JDK 21 y Android SDK 35; el APK debug se genera con Gradle.
+- El botón Atrás vuelve a la pantalla anterior y cierra la app en la portada.
+- La app no hace peticiones de red; el permiso `INTERNET` se conserva por el comportamiento estándar de Capacitor.
+
+---
+
+## ADR-010 — CSS Modules y tokens, sin framework de UI
+
+**Fecha:** 2026-11-17 · **Estado:** aceptada
+
+**Contexto:** se busca una identidad kawaii muy concreta, con botones grandes y animaciones suaves, sin peso innecesario.
+
+**Decisión:** CSS moderno con variables en `styles/tokens.css`, CSS Modules por componente y componentes propios. Sin Tailwind, styled-components ni librería de componentes.
+
+**Consecuencias:**
+
+- Control total del diseño y del tamaño del bundle.
+- Los estilos quedan encapsulados y son fáciles de revisar.
+- Hay que mantener a mano la coherencia visual; los tokens son la fuente de verdad.
+- Los tests de UI se apoyan en roles y textos, no en clases.
+
+---
+
+## ADR-011 — Recompensas derivadas de estrellas
+
+**Fecha:** 2026-11-17 · **Estado:** aceptada
+
+**Contexto:** la motivación debe ser simbólica, offline y sin mecánicas de azar o compra.
+
+**Decisión:** catálogo estático de pegatinas con hitos de estrellas (0, 1, 3, 5, 8, 12). El estado bloqueado/desbloqueado se deriva de `progress.stars`; no se guarda un inventario aparte.
+
+**Consecuencias:**
+
+- No hay estados duplicados ni recompensas perdidas.
+- Cambiar un umbral recalcula el álbum automáticamente.
+- Las estrellas se ganarán con las fichas de trazado en sprints posteriores; en Sprint 0 el contador empieza en 0 y la primera pegatina está disponible.
+- No hay monedas, loot boxes, compras ni publicidad.
+
+---
+
+## ADR-012 — Contenido educativo centralizado y basado en datos
+
+**Fecha:** 2026-11-17 · **Estado:** aceptada
+
+**Contexto:** se prevén mayúsculas, minúsculas, números y futuros alfabetos, sin duplicar pantallas.
+
+**Decisión:** `modules/lessons/content.ts` define paquetes y caracteres con ids estables; las pantallas iteran sobre `LESSON_PACKS`. Las palabras de ejemplo están en español y la Ñ se incluye en ambos alfabetos.
+
+**Consecuencias:**
+
+- 64 caracteres en Sprint 0 (27 + 27 + 10).
+- Añadir un alfabeto no requiere tocar Home, Learning ni Rewards.
+- Los ids son claves de progreso: cambiarlos exige migración.
+- El modelo es serializable y testeable sin DOM.
+
+---
+
+## ADR-013 — Vitest + Testing Library + fake-indexeddb
+
+**Fecha:** 2026-11-17 · **Estado:** aceptada
+
+**Contexto:** se necesita verificar lógica, rutas, componentes e IndexedDB sin un navegador real.
+
+**Decisión:** Vitest 4 con jsdom, Testing Library, `jest-dom` y `fake-indexeddb`. Setup común en `src/test/setup.ts` con stub de `ResizeObserver` y `scrollTo`.
+
+**Consecuencias:**
+
+- Pruebas rápidas y integradas con Vite.
+- El repositorio se prueba contra una implementación real de IndexedDB en memoria.
+- jsdom no reproduce Canvas ni gestos táctiles; el dibujo se prueba a nivel de utilidades puras y se valida manualmente en navegador/dispositivo.
+- Los tests de integración cubren navegación y render, no píxeles.
+
+---
+
+## ADR-014 — Manejo defensivo de errores y datos
+
+**Fecha:** 2026-11-17 · **Estado:** aceptada
+
+**Contexto:** una niña de 4 años no debe ver pantallas rotas ni mensajes técnicos.
+
+**Decisión:** `ErrorBoundary` global con tarjeta amable y recarga; pantalla 404 con vuelta al inicio; validación de progreso con caída a estado vacío; estado `error` con reintento en Progreso; cierre seguro de trazos cancelados.
+
+**Consecuencias:**
+
+- La app degrada con dignidad ante fallos de almacenamiento o render.
+- Nunca se muestran stack traces al usuario.
+- Los errores se registran solo en consola local.
+- El reset silencioso de datos corruptos es aceptable en Sprint 0; el Sprint 5 añadirá migraciones probadas.
+
+---
+
+## ADR-015 — Privacidad y offline como restricciones de diseño
+
+**Fecha:** 2026-11-17 · **Estado:** aceptada
+
+**Contexto:** app infantil, sin cuenta, que debe funcionar en un dispositivo compartido y sin conexión.
+
+**Decisión:** no hay backend, analítica, anuncios, tracking, enlaces externos, compras ni recursos remotos. Todo el estado vive en IndexedDB. La build incluye fuentes, SVG, iconos y datos.
+
+**Consecuencias:**
+
+- No se recoge ningún dato personal; no hay que gestionar consentimiento ni retención.
+- La app funciona en modo avión tras la primera carga/instalación.
+- Las mejoras futuras (sonidos, contenido) deben empaquetarse, no descargarse.
+- La única concesión es el permiso `INTERNET` estándar de Capacitor, que no se usa para peticiones de la app.
+
+---
+
+## ADR-016 — Interfaz en español, código en inglés
+
+**Fecha:** 2026-11-17 · **Estado:** aceptada
+
+**Contexto:** la usuaria y su familia hablan español; el equipo técnico trabaja con convenciones internacionales.
+
+**Decisión:** todos los textos visibles, nombres accesibles y documentación de producto en español; identificadores, tipos, archivos y commits en inglés (los mensajes de commit pueden ser descriptivos en español).
+
+**Consecuencias:**
+
+- La niña y los adultos entienden la app.
+- El código sigue convenciones habituales y es fácil de mantener.
+- Las futuras traducciones deberán extraer textos a un catálogo; hoy están en los componentes por simplicidad.
+
+---
+
+## ADR-017 — Fijar versiones compatibles con Node 20.15
+
+**Fecha:** 2026-11-17 · **Estado:** aceptada
+
+**Contexto:** el entorno tiene Node 20.15.1 y npm 10.7.0. Las últimas versiones de Vite, plugin-react, Vitest y Capacitor exigen Node 20.19+ o 22+.
+
+**Decisión:** fijar Vite 6.4, `@vitejs/plugin-react` 4.7, Vitest 4.1.12 (compatible con Node 20), Capacitor 7, TypeScript 5.9 y vite-plugin-pwa 1.3. Instalar con `npx -y npm@10.9.4` cuando npm 10.7 falla con `edgesOut`.
+
+**Consecuencias:**
+
+- Todo el pipeline funciona en el entorno actual.
+- Algunas dependencias de tooling (por ejemplo `eslint-visitor-keys`) muestran avisos `EBADENGINE`, pero lint y build pasan; conviene actualizar Node a 20.19+/22 en el futuro.
+- No se actualizan majors sin una tarea dedicada y verificación completa.
+- `npm audit` deja 4 vulnerabilidades moderadas en dependencias de desarrollo de Workbox; no se fuerza la corrección porque rompería la compatibilidad.

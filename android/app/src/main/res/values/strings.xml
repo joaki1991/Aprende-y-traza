@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Aprende y Traza</string>
+    <string name="title_activity_main">Aprende y Traza</string>
+    <string name="package_name">com.aprendeytraza.app</string>
+    <string name="custom_url_scheme">com.aprendeytraza.app</string>
+</resources>

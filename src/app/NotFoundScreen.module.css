@@ -1,0 +1,28 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 18px 18px 22px;
+  text-align: center;
+  background: rgba(255, 253, 249, 0.88);
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+}
+
+.mascot {
+  width: 136px;
+}
+
+.card h2 {
+  font-size: 1.5rem;
+}
+
+.card p {
+  margin-bottom: 6px;
+  color: var(--color-ink-soft);
+  font-size: 0.84rem;
+  font-weight: 700;
+}

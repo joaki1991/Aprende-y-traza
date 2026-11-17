@@ -1,0 +1,29 @@
+.mochi {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  transform-origin: 50% 85%;
+  animation: soft-float 6s var(--ease-soft) infinite;
+}
+
+.eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: blink 7s infinite;
+}
+
+.tail {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: tail-wag 5s var(--ease-soft) infinite;
+}
+
+@keyframes tail-wag {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-7deg);
+  }
+}

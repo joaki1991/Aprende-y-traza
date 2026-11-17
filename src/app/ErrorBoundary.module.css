@@ -1,0 +1,53 @@
+.fallback {
+  display: grid;
+  min-height: 100dvh;
+  padding: 24px;
+  place-items: center;
+}
+
+.card {
+  display: flex;
+  width: min(100%, 390px);
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+  background: rgba(255, 253, 249, 0.94);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+}
+
+.mascot {
+  width: 120px;
+}
+
+.card h1 {
+  font-size: 1.7rem;
+}
+
+.card p {
+  color: var(--color-ink-soft);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.button {
+  min-height: 52px;
+  margin-top: 6px;
+  padding: 10px 22px;
+  color: #7752bb;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #f8f3ff 0%, #dccafa 100%);
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 5px 0 #c9b1ef;
+}
+
+.button:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #c9b1ef;
+}

@@ -1,0 +1,42 @@
+# Dependencias y artefactos generados
+node_modules/
+dist/
+dev-dist/
+coverage/
+*.local
+
+# Registros
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Entornos y secretos
+.env
+.env.*
+!.env.example
+
+# Sistema y editores
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.iml
+
+# Android / Gradle (el proyecto nativo sí se versiona)
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/captures/
+android/.idea/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/capacitor-cordova-android-plugins/
+
+# Vite PWA
+sw.js
+workbox-*.js
