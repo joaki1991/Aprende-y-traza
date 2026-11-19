@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
-import { getLessonPack } from '@/modules/lessons/content';
+import { getLessonCharacter, getLessonPack } from '@/modules/lessons/content';
 import { AppShell } from '@/components/layout/AppShell';
 import { HomeScreen } from '@/modules/home/HomeScreen';
 import { LearningScreen } from '@/modules/learning/LearningScreen';
 import { LessonPreviewScreen } from '@/modules/learning/LessonPreviewScreen';
+import { TraceScreen } from '@/modules/tracing/TraceScreen';
 import { DoodleScreen } from '@/modules/tracing/DoodleScreen';
 import { ProgressScreen } from '@/modules/progress/ProgressScreen';
 import { RewardsScreen } from '@/modules/rewards/RewardsScreen';
@@ -22,6 +23,10 @@ function pageTitle(route: AppRoute): string {
       return `Aprender · ${APP_NAME}`;
     case 'lesson':
       return `${getLessonPack(route.packId)?.title ?? 'Lección'} · ${APP_NAME}`;
+    case 'trace': {
+      const glyph = getLessonCharacter(route.packId, route.characterId)?.glyph;
+      return glyph ? `Trazar la ${glyph} · ${APP_NAME}` : `Trazar · ${APP_NAME}`;
+    }
     case 'doodle':
       return `Pizarra mágica · ${APP_NAME}`;
     case 'progress':
@@ -41,6 +46,8 @@ function screenForRoute(route: AppRoute) {
       return <LearningScreen />;
     case 'lesson':
       return <LessonPreviewScreen packId={route.packId} />;
+    case 'trace':
+      return <TraceScreen packId={route.packId} characterId={route.characterId} />;
     case 'doodle':
       return <DoodleScreen />;
     case 'progress':

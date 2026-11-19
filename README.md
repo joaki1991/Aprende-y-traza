@@ -2,7 +2,7 @@
 
 Aplicación educativa **kawaii** para que una niña de unos 4 años aprenda a trazar letras mayúsculas, minúsculas y números. Funciona como PWA instalable y está preparada para empaquetarse como app Android con Capacitor.
 
-> **Estado actual: Sprint 0 completado.** La base técnica, la identidad visual provisional, la PWA, el almacenamiento local y el proyecto Android están preparados. El motor de trazado educativo y las fichas de lecciones se implementarán en sprints posteriores.
+> **Estado actual: Sprint 1 completado.** La app ya incluye un motor real de trazado y una ficha completa para la **A mayúscula**: guía SVG, tinta Canvas, validación de inicio/recorrido/dirección/orden, feedback amable y registro local. El resto de fichas y las minúsculas/números llegan en los siguientes sprints.
 
 ---
 
@@ -10,11 +10,13 @@ Aplicación educativa **kawaii** para que una niña de unos 4 años aprenda a tr
 
 - Interfaz completa y navegable: portada, selección de contenidos, vista previa de paquetes, pizarra libre, progreso y recompensas.
 - Identidad kawaii pastel con tipografías locales, mascota SVG y pegatinas SVG.
+- Ejercicio de trazado de la A mayúscula con tres trazos ordenados, flecha, guía punteada y celebración con Mochi.
+- Motor geométrico propio que valida inicio, cobertura, desviación, dirección, final y orden, y rechaza garabatos.
 - Pizarra táctil sobre Canvas con Pointer Events, captura de puntero, DPR y `ResizeObserver`.
-- Progreso y ajustes en IndexedDB, sin registro ni datos personales.
+- Progreso y ajustes en IndexedDB, sin registro ni datos personales; el ejercicio guarda intentos, rondas completadas, precisión y fecha.
 - PWA con manifest, iconos, service worker y funcionamiento offline.
 - Proyecto Android generado con Capacitor, orientación vertical, iconos y splash propios.
-- 33 pruebas automatizadas, TypeScript estricto, ESLint y build de producción verificado.
+- 72 pruebas automatizadas, TypeScript estricto, ESLint y build de producción verificado.
 
 ## Requisitos
 
@@ -117,13 +119,13 @@ Notas:
 │   ├── modules/
 │   │   ├── home/            Pantalla principal
 │   │   ├── learning/        Selección y vista previa de paquetes
-│   │   ├── lessons/         Modelo y contenido educativo centralizado
+│   │   ├── lessons/         Modelo, contenido y trazos SVG (`traces/`)
 │   │   ├── native/          Integración Android (botón Atrás)
 │   │   ├── progress/        Progreso, resumen y provider
 │   │   ├── pwa/             Registro del service worker
 │   │   ├── rewards/         Catálogo y arte de pegatinas
 │   │   ├── storage/         Capa mínima sobre IndexedDB
-│   │   └── tracing/         Pizarra Canvas y utilidades de dibujo
+│   │   └── tracing/         Pizarra, motor geométrico y pantalla de trazado
 │   ├── styles/              Tokens, base global y fuentes
 │   └── test/                Configuración de pruebas
 ├── AGENTS.md                Reglas para agentes y colaboradores
@@ -139,13 +141,15 @@ Todo el contenido vive en `src/modules/lessons/content.ts`:
 - 27 minúsculas.
 - 10 dígitos.
 
-Cada carácter tiene `id`, `glyph`, nombre accesible, palabra de ejemplo y orden. El modelo `lesson.types.ts` ya define `TraceStroke` y `CharacterTrace` para que el motor de trazado del Sprint 2 consuma recorridos SVG sin cambiar los datos.
+Cada carácter tiene `id`, `glyph`, nombre accesible, palabra de ejemplo y orden. Los recorridos de escritura viven en `src/modules/lessons/traces/`: hoy está registrada la A mayúscula y el resto se irá añadiendo sin tocar el motor ni las pantallas.
+
+Para probar el ejercicio, abre `#/aprender/mayusculas/upper-a` o entra en Aprender → Mayúsculas → «Trazar la A».
 
 Para añadir un alfabeto nuevo (por ejemplo, cursiva o pictogramas):
 
 1. Crea una nueva entrada en `LESSON_PACKS`.
 2. Usa un `scriptId` nuevo y caracteres con identificadores estables.
-3. Añade sus trazos SVG cuando exista el motor de trazado.
+3. Añade sus `CharacterTrace` en `traces/` y regístralos en `traces/index.ts`.
 4. Ejecuta las pruebas y actualiza `docs/architecture.md` si cambia el modelo.
 
 ## Privacidad y offline
@@ -168,12 +172,13 @@ npm run test:run
 npm run build
 ```
 
-Resultados de referencia del Sprint 0 y limitaciones conocidas: [`docs/sprint-0.md`](docs/sprint-0.md).
+Resultados de referencia del Sprint 1 y limitaciones conocidas: [`docs/sprint-1.md`](docs/sprint-1.md). El Sprint 0 queda documentado en [`docs/sprint-0.md`](docs/sprint-0.md).
 
 ## Documentación
 
 - [`docs/architecture.md`](docs/architecture.md): arquitectura, capas, flujos y guías de extensión.
 - [`docs/technical-decisions.md`](docs/technical-decisions.md): registro de decisiones técnicas (ADR).
-- [`docs/sprint-0.md`](docs/sprint-0.md): entregables, pruebas y tareas pendientes.
+- [`docs/sprint-1.md`](docs/sprint-1.md): motor de trazado, algoritmo de validación, pruebas y limitaciones.
+- [`docs/sprint-0.md`](docs/sprint-0.md): entregables y validación de la base técnica.
 - [`ROADMAP.md`](ROADMAP.md): plan de sprints.
 - [`AGENTS.md`](AGENTS.md): normas de desarrollo para OpenCode y colaboradores.

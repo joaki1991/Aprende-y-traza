@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { loadProgress } from './progress.repository';
+import {
+  loadProgress,
+  recordPractice as recordPracticeInStorage,
+  type PracticeRecordInput,
+} from './progress.repository';
 import { createEmptyProgress, type ProgressSnapshot } from './progress.types';
 import { summarizeProgress } from './progress.utils';
 import {
@@ -16,6 +20,16 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(() => {
     setStatus('loading');
     setReloadToken((token) => token + 1);
+  }, []);
+
+  const recordPractice = useCallback(async (input: PracticeRecordInput) => {
+    try {
+      const snapshot = await recordPracticeInStorage(input);
+      setProgress(snapshot);
+      setStatus('ready');
+    } catch (error) {
+      console.error('[Aprende y Traza] No se pudo guardar la práctica.', error);
+    }
   }, []);
 
   useEffect(() => {
@@ -48,8 +62,9 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       summary: summarizeProgress(progress),
       status,
       refresh,
+      recordPractice,
     }),
-    [progress, status, refresh],
+    [progress, status, refresh, recordPractice],
   );
 
   return <ProgressContext.Provider value={value}>{children}</ProgressContext.Provider>;

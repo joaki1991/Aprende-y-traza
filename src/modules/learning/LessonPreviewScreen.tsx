@@ -1,9 +1,10 @@
-import { PaletteIcon, SparkleIcon } from '@/components/icons/Icons';
+import { PaletteIcon, PencilIcon, SparkleIcon } from '@/components/icons/Icons';
 import { Screen } from '@/components/layout/Screen';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { BigActionLink } from '@/components/ui/BigActionLink';
-import { ROUTES } from '@/app/router';
+import { ROUTES, characterHref } from '@/app/router';
 import { getLessonPack } from '@/modules/lessons/content';
+import { hasCharacterTrace } from '@/modules/lessons/traces';
 import { NotFoundScreen } from '@/app/NotFoundScreen';
 import styles from './LessonPreviewScreen.module.css';
 
@@ -19,6 +20,10 @@ export function LessonPreviewScreen({ packId }: LessonPreviewScreenProps) {
   }
 
   const itemNoun = pack.scriptId === 'digits' ? 'números' : 'letras';
+  const availableCharacters = pack.characters.filter((character) =>
+    hasCharacterTrace(character.id),
+  );
+  const firstAvailable = availableCharacters[0];
 
   return (
     <Screen>
@@ -40,11 +45,27 @@ export function LessonPreviewScreen({ packId }: LessonPreviewScreenProps) {
         </div>
       </section>
 
+      {firstAvailable ? (
+        <BigActionLink
+          href={characterHref(pack.id, firstAvailable.id)}
+          accent="pink"
+          icon={<PencilIcon />}
+        >
+          Trazar la {firstAvailable.glyph}
+        </BigActionLink>
+      ) : null}
+
       <aside className={styles.comingSoon}>
         <SparkleIcon width="24" height="24" />
         <div>
-          <strong>¡Muy pronto!</strong>
-          <p>Estamos preparando las fichas mágicas para trazar.</p>
+          <strong>
+            {firstAvailable ? '¡La primera ficha ya está lista!' : '¡Muy pronto!'}
+          </strong>
+          <p>
+            {firstAvailable
+              ? `Toca la ${firstAvailable.glyph} para empezar. Las demás fichas llegan pronto.`
+              : 'Estamos preparando las fichas mágicas para trazar.'}
+          </p>
         </div>
       </aside>
 
@@ -53,20 +74,45 @@ export function LessonPreviewScreen({ packId }: LessonPreviewScreenProps) {
           Lo que vas a aprender
         </h2>
         <ul className={styles.grid}>
-          {pack.characters.map((character) => (
-            <li
-              className={styles.chip}
-              key={character.id}
-              aria-label={`${character.spokenName}: ${character.exampleWord}`}
-            >
-              <span className={styles.glyph} aria-hidden="true">
-                {character.glyph}
-              </span>
-              <span className={styles.word} aria-hidden="true">
-                {character.exampleWord}
-              </span>
-            </li>
-          ))}
+          {pack.characters.map((character) => {
+            const available = hasCharacterTrace(character.id);
+            const inner = (
+              <>
+                <span className={styles.glyph} aria-hidden="true">
+                  {character.glyph}
+                </span>
+                <span className={styles.word} aria-hidden="true">
+                  {character.exampleWord}
+                </span>
+                {available ? (
+                  <span className={styles.play} aria-hidden="true">
+                    ▶
+                  </span>
+                ) : null}
+              </>
+            );
+
+            return (
+              <li key={character.id}>
+                {available ? (
+                  <a
+                    className={`${styles.chip} ${styles.available}`}
+                    href={characterHref(pack.id, character.id)}
+                    aria-label={`Trazar ${character.spokenName}: ${character.exampleWord}`}
+                  >
+                    {inner}
+                  </a>
+                ) : (
+                  <div
+                    className={styles.chip}
+                    aria-label={`${character.spokenName}: ${character.exampleWord}`}
+                  >
+                    {inner}
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </section>
 

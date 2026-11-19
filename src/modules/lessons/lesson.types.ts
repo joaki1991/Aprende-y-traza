@@ -50,18 +50,25 @@ export type StrokeDirection =
 /**
  * Recorrido SVG de un trazo.
  * Las coordenadas se expresan en el sistema del `viewBox` del carácter.
- * El motor de trazado (Sprint 2) consumirá este modelo.
+ * El motor de trazado consume este modelo sin conocer React ni Canvas.
  */
 export interface TraceStroke {
   id: string;
   order: number;
-  /** Atributo `d` de un <path> SVG. */
+  /** Atributo `d` de un <path> SVG. Admite M/L/H/V/C/S/Q/T/Z. */
   path: string;
   /** Pista corta para el adulto o el audio futuro. */
   label: string;
+  /** Instrucción sencilla para la niña, mostrada junto a Mochi. */
+  instruction: string;
   start: TracePoint;
   end: TracePoint;
   direction: StrokeDirection;
+  /**
+   * Radio de tolerancia como fracción del lado menor del `viewBox`.
+   * Si se omite, el motor usa `DEFAULT_TOLERANCE_RATIO`.
+   */
+  tolerance?: number;
 }
 
 export interface CharacterTrace {

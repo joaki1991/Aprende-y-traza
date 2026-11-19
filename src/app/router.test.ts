@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ROUTES, lessonHref, parseRoute, routeKey } from './router';
+import { ROUTES, characterHref, lessonHref, parseRoute, routeKey } from './router';
 
 describe('parseRoute', () => {
   it('interpreta la portada con hash vacío o raíz', () => {
@@ -26,9 +26,25 @@ describe('parseRoute', () => {
     expect(parseRoute('#/pizarra/?modo=libre')).toEqual({ name: 'doodle' });
   });
 
+  it('interpreta la ficha de un carácter', () => {
+    expect(parseRoute('#/aprender/mayusculas/upper-a')).toEqual({
+      name: 'trace',
+      packId: 'mayusculas',
+      characterId: 'upper-a',
+    });
+    expect(parseRoute(characterHref('mayusculas', 'upper-a'))).toEqual({
+      name: 'trace',
+      packId: 'mayusculas',
+      characterId: 'upper-a',
+    });
+  });
+
   it('devuelve una ruta segura para URLs desconocidas', () => {
     expect(parseRoute('#/secreto')).toEqual({ name: 'notFound' });
-    expect(parseRoute('#/aprender/mayusculas/extra')).toMatchObject({ name: 'lesson' });
+    expect(parseRoute('#/aprender/mayusculas/upper-a/extra')).toMatchObject({
+      name: 'trace',
+      characterId: 'upper-a',
+    });
   });
 
   it('expone los enlaces centralizados', () => {
@@ -40,6 +56,9 @@ describe('parseRoute', () => {
 describe('routeKey', () => {
   it('incluye el paquete para reiniciar la pantalla al cambiar de lección', () => {
     expect(routeKey({ name: 'lesson', packId: 'mayusculas' })).toBe('lesson:mayusculas');
+    expect(routeKey({ name: 'trace', packId: 'mayusculas', characterId: 'upper-a' })).toBe(
+      'trace:mayusculas:upper-a',
+    );
     expect(routeKey({ name: 'home' })).toBe('home');
   });
 });

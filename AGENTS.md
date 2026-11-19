@@ -7,7 +7,7 @@ Guía para agentes de OpenCode y para cualquier persona que contribuya a **Apren
 - App educativa kawaii para una niña de ~4 años: trazar mayúsculas, minúsculas y números.
 - Interfaz en **español**; identificadores de código en **inglés**.
 - Prioridad absoluta: **móvil Android vertical**, botones grandes, lectura mínima, uso con dedos pequeños.
-- Estado actual: **Sprint 0 cerrado**. No implementes funcionalidades de sprints futuros sin que se pida explícitamente.
+- Estado actual: **Sprint 1 cerrado**. El motor de trazado está implementado y la ficha de la A mayúscula es la única completa. No implementes el resto de fichas ni funcionalidades de sprints futuros sin que se pida explícitamente.
 
 ## 2. Reglas irrenunciables
 
@@ -55,13 +55,16 @@ Reglas:
 
 ## 5. Contenidos educativos
 
-- Fuente única de verdad: `src/modules/lessons/content.ts`.
+- Fuente única de verdad del catálogo: `src/modules/lessons/content.ts`.
 - Modelo: `src/modules/lessons/lesson.types.ts`.
+- Recorridos de escritura: `src/modules/lessons/traces/` y registro en `traces/index.ts`.
 - Cada carácter necesita `id` estable, `glyph`, `spokenName`, `exampleWord` y `order`.
 - Los paquetes se identifican por `packId` (`mayusculas`, `minusculas`, `numeros`).
 - Los trazos SVG se describen con `TraceStroke`; no los incrustes en componentes de pantalla.
+- Cada `TraceStroke` debe declarar `path`, `start`, `end`, `direction`, `order`, `label` e `instruction`; `tolerance` es opcional.
+- Solo la A mayúscula tiene `CharacterTrace` en el Sprint 1. Las fichas sin trazos deben mostrar un aviso amable, nunca romperse.
 - Para añadir un alfabeto, crea un paquete nuevo con su `scriptId`; no dupliques la estructura de pantallas.
-- Añade o actualiza pruebas de contenido al cambiar el catálogo (longitud, ids únicos, Ñ, palabras de ejemplo).
+- Añade o actualiza pruebas de contenido al cambiar el catálogo (longitud, ids únicos, Ñ, palabras de ejemplo) y pruebas de integridad de los nuevos trazos.
 
 ## 6. Diseño visual y accesibilidad
 
@@ -76,21 +79,36 @@ Reglas:
 
 ## 7. Canvas y trazado
 
-La pizarra actual (`src/modules/tracing/DoodleCanvas.tsx`) es la referencia técnica para el motor del Sprint 2.
+La pizarra libre (`src/modules/tracing/DoodleCanvas.tsx`) y el ejercicio educativo (`TraceCanvas.tsx`) comparten las reglas técnicas del motor.
 
 - Usa **Pointer Events** (`pointerdown`, `pointermove`, `pointerup`, `pointercancel`) y captura del puntero.
-- Mantén las coordenadas **normalizadas (0–1)** en el modelo, para que el redimensionado no deforme el dibujo.
+- Mantén las coordenadas **normalizadas** en el modelo: 0–1 en la pizarra libre y coordenadas del `viewBox` en el ejercicio educativo, para que el redimensionado no deforme el dibujo.
 - Gestiona **devicePixelRatio** (limitado a 3) y `ResizeObserver`.
-- Cancelar `requestAnimationFrame`, desconectar observadores y liberar referencias en el cleanup.
+- Cancela `requestAnimationFrame`, desconecta observadores y libera referencias en el cleanup.
 - `touch-action: none`, `user-select: none` y prevención de menú contextual dentro del lienzo.
 - No repintes todo el lienzo en cada movimiento si puedes pintar solo el segmento nuevo.
-- No añadas una segunda librería de dibujo. El motor educativo debe reutilizar estas utilidades.
-- El motor de evaluación de trazos del Sprint 2 irá en `src/modules/tracing/` y consumirá `TraceStroke`; no lo implementes todavía.
+- No añadas una segunda librería de dibujo.
+
+El motor educativo vive en `src/modules/tracing/`:
+
+- `traceGeometry.ts`: muestreo de paths SVG `M/L/H/V/C/S/Q/T/Z` y conversión de píxeles al `viewBox`.
+- `traceValidation.ts`: métricas y umbrales; no importa React ni DOM.
+- `traceSession.ts`: orden de trazos, intentos y precisión.
+- `TraceGuide.tsx`, `TraceCanvas.tsx` y `TraceScreen.tsx`: presentación y persistencia.
+
+Reglas para ampliar el motor:
+
+- La validación debe seguir siendo geometría pura y probarse sin DOM.
+- El orden de los trazos lo impone la sesión; un intento rechazado no avanza.
+- Las tolerancias se expresan como fracción del lado menor del `viewBox`, no en píxeles.
+- Cualquier letra nueva debe conservar la proporción del tablero (5:7 con `0 0 100 140`).
+- No expandas el catálogo a las 64 fichas desde una tarea del Sprint 1; hazlo en el sprint correspondiente.
 
 ## 8. Persistencia
 
 - IndexedDB: base `aprende-y-traza`, versión `1`, stores `progress` y `settings`.
 - Toda lectura/escritura pasa por `src/modules/storage/db.ts` y `progress.repository.ts`.
+- El ejercicio registra intentos, rondas completadas, mejor precisión, último resultado y fecha con `recordPractice()`. No otorga estrellas todavía.
 - Valida los datos al leer: si están corruptos o son de una versión desconocida, vuelve a un estado vacío en lugar de romper la app.
 - Si cambias el esquema, incrementa `DB_VERSION`, añade migración y prueba apertura desde una versión anterior.
 - No guardes nombres, edad, ubicación, identificadores de dispositivo ni nada personal.
@@ -159,6 +177,10 @@ Un commit debe poder explicarse solo. No mezcles refactors masivos con funcional
 | Añadir una pantalla | `src/modules/<dominio>/`, `src/app/router.ts`, `src/app/App.tsx` |
 | Añadir una ruta | `src/app/router.ts` + prueba en `router.test.ts` |
 | Añadir un carácter o paquete | `src/modules/lessons/content.ts` |
+| Añadir o cambiar trazos | `src/modules/lessons/traces/` + `traces/index.ts` |
+| Cambiar la validación o tolerancias | `src/modules/tracing/traceValidation.ts` |
+| Cambiar la pantalla de trazado | `src/modules/tracing/TraceScreen.tsx` |
+| Cambiar el Canvas del ejercicio | `src/modules/tracing/TraceCanvas.tsx` |
 | Cambiar colores/tipografía | `src/styles/tokens.css` |
 | Añadir un componente compartido | `src/components/` |
 | Añadir una recompensa | `src/modules/rewards/rewards.ts` + `StickerArt.tsx` |
@@ -174,6 +196,7 @@ Una tarea está terminada cuando:
 - Compila sin errores ni warnings nuevos.
 - Pasa lint, typecheck y pruebas.
 - Funciona en viewport móvil y mantiene el diseño kawaii.
+- El ejercicio de trazado se prueba con dedo/ratón en un navegador real, no solo con jsdom.
 - Sigue funcionando offline (si aplica).
 - No introduce recursos remotos, datos personales ni dependencias injustificadas.
 - La documentación y las decisiones quedan actualizadas.

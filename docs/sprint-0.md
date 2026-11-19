@@ -2,6 +2,8 @@
 
 **Fecha:** 17 de noviembre de 2026 · **Estado:** completado ✅
 
+> Documento histórico del Sprint 0. El Sprint 1 ejecutado fue el motor de trazado educativo con la ficha de la A; consulta [`sprint-1.md`](sprint-1.md) para el estado actual. Las tareas pendientes de este documento se conservan como registro de lo que quedaba abierto al cerrar el Sprint 0.
+
 Este documento resume los entregables, las verificaciones realizadas, las limitaciones conocidas y el punto de partida del Sprint 1.
 
 ## 1. Entorno de verificación

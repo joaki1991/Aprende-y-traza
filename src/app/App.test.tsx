@@ -46,10 +46,34 @@ describe('App', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Mayúsculas' })).toBeInTheDocument();
     expect(screen.getByText(/27 letras para descubrir/i)).toBeInTheDocument();
     expect(screen.getByText('Abeja')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Trazar la A' })).toHaveAttribute(
+      'href',
+      '#/aprender/mayusculas/upper-a',
+    );
     expect(screen.getByRole('link', { name: /probar la pizarra/i })).toHaveAttribute(
       'href',
       '#/pizarra',
     );
+  });
+
+  it('abre la ficha de trazado de la A', () => {
+    renderAt('#/aprender/mayusculas/upper-a');
+
+    expect(screen.getByRole('heading', { level: 1, name: 'La A' })).toBeInTheDocument();
+    expect(screen.getByText(/baja desde la punta hacia la izquierda/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /volver a las letras/i })).toHaveAttribute(
+      'href',
+      '#/aprender/mayusculas',
+    );
+    expect(document.title).toBe('Trazar la A · Aprende y Traza');
+  });
+
+  it('avisa con cariño cuando una ficha aún no tiene trazos', () => {
+    renderAt('#/aprender/mayusculas/upper-b');
+
+    expect(screen.getByRole('heading', { level: 1, name: 'B' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /muy pronto/i })).toBeInTheDocument();
+    expect(screen.getByText(/la ficha de la b todavía se está preparando/i)).toBeInTheDocument();
   });
 
   it('muestra una pantalla amable para rutas desconocidas', () => {

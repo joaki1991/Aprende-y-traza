@@ -1,6 +1,6 @@
 # Registro de decisiones técnicas (ADR)
 
-Decisiones tomadas durante el Sprint 0. Formato ligero: contexto → decisión → consecuencias. Una decisión nueva debe añadirse aquí, no solo al código.
+Decisiones tomadas durante los sprints 0 y 1. Formato ligero: contexto → decisión → consecuencias. Una decisión nueva debe añadirse aquí, no solo al código.
 
 ---
 
@@ -295,3 +295,77 @@ Decisiones tomadas durante el Sprint 0. Formato ligero: contexto → decisión �
 - Algunas dependencias de tooling (por ejemplo `eslint-visitor-keys`) muestran avisos `EBADENGINE`, pero lint y build pasan; conviene actualizar Node a 20.19+/22 en el futuro.
 - No se actualizan majors sin una tarea dedicada y verificación completa.
 - `npm audit` deja 4 vulnerabilidades moderadas en dependencias de desarrollo de Workbox; no se fuerza la corrección porque rompería la compatibilidad.
+
+---
+
+## ADR-018 — Validación geométrica por métricas, no por proximidad simple
+
+**Fecha:** 2026-11-19 · **Estado:** aceptada
+
+**Contexto:** aprobar un trazo solo porque el dedo pasa cerca de la letra permitiría completar garabatos, recorridos parciales o trazos en sentido contrario. La usuaria tiene unos 4 años, así que la exigencia debe ser clara pero tolerante.
+
+**Decisión:** evaluar cada trazo con métricas independientes sobre la polilínea oficial muestreada:
+
+- cobertura del recorrido (≥ 0,86),
+- precisión de los puntos dibujados (≥ 0,72),
+- dirección de avance (≥ 0,70),
+- progreso final (≥ 0,82),
+- distancia al inicio (tolerancia × 1,5) y al final (× 1,8),
+- ratio de longitud máxima 3,4,
+- mínimo 4 puntos.
+
+La puntuación es `0.45 × cobertura + 0.35 × precisión + 0.20 × dirección`. Todos los umbrales son configurables por opciones y las tolerancias se expresan como fracción del lado menor del `viewBox`.
+
+**Consecuencias:**
+
+- Un garabato, un trazo invertido o un recorrido a medias se rechazan con un motivo concreto.
+- El mismo trazo se evalúa igual en cualquier tamaño de pantalla.
+- Las letras futuras pueden ajustar tolerancia por trazo sin tocar el algoritmo.
+- Los umbrales habrá que revisarlos con trazos reales de la niña; hoy están calibrados con trazos sintéticos.
+
+---
+
+## ADR-019 — El `viewBox` es el sistema de coordenadas único del ejercicio
+
+**Fecha:** 2026-11-19 · **Estado:** aceptada
+
+**Decisión:** la guía se dibuja como SVG y la tinta como Canvas transparente superpuesto, ambos con la misma proporción 5:7. El canvas convierte cada evento de puntero a coordenadas del `viewBox` antes de guardar el punto; la validación, el pintado y la guía trabajan siempre en ese sistema.
+
+**Consecuencias:**
+
+- Redimensionar o cambiar de densidad de pantalla no altera ni el dibujo ni el resultado.
+- La tinta y la guía quedan alineadas sin cálculos duplicados.
+- El tablero debe conservar la proporción del `viewBox`; deformarla invalidaría la geometría. Por eso el CSS fija `aspect-ratio: 5 / 7`.
+- jsdom no implementa Canvas 2D: las pruebas montan un contexto mínimo y la interacción real se verifica en Chromium.
+
+---
+
+## ADR-020 — Sesión ordenada y feedback sin penalización
+
+**Fecha:** 2026-11-19 · **Estado:** aceptada
+
+**Contexto:** el orden de escritura forma parte del aprendizaje y la niña no debe sentir que falla.
+
+**Decisión:** una máquina de estados pura (`traceSession.ts`) evalúa solo el trazo actual. Si el dibujo coincide con otro trazo pendiente, la validación añade `wrong-order` y `orderHint`; la sesión no avanza. Un rechazo incrementa el contador interno y permite repetir inmediatamente. La interfaz traduce cada issue a una frase amable y reinicia el trazo automáticamente sin mensajes negativos.
+
+**Consecuencias:**
+
+- No se puede aprobar la letra saltándose trazos ni alterando el orden.
+- El estado es testeable sin DOM y no se duplica en la UI.
+- La corrección es visible pero no punitiva; no hay vidas, cronómetros ni bloqueos.
+- En el futuro se podrá añadir una demostración o una pista sin cambiar el contrato de la sesión.
+
+---
+
+## ADR-021 — Registrar la práctica en el progreso existente, sin estrellas todavía
+
+**Fecha:** 2026-11-19 · **Estado:** aceptada
+
+**Decisión:** ampliar `CharacterProgress` con `completions` y `lastResult` opcionales y añadir `recordPractice()` al repositorio existente. Cada trazo rechazado registra un intento `incomplete`; cada ronda completada registra un intento `completed` con la precisión media. No se modifican las estrellas ni se crea un store nuevo.
+
+**Consecuencias:**
+
+- Se cumple el requisito de intentos, resultado y fecha sin duplicar persistencia.
+- Los datos antiguos siguen siendo válidos y se normalizan al leer.
+- La economía de estrellas queda libre para un sprint posterior sin migración destructiva.
+- Cerrar la app a mitad de ronda no registra ese intento parcial; se evita escribir en cada movimiento para no castigar el rendimiento.

@@ -10,6 +10,7 @@ export type AppRoute =
   | { name: 'home' }
   | { name: 'learning' }
   | { name: 'lesson'; packId: string }
+  | { name: 'trace'; packId: string; characterId: string }
   | { name: 'doodle' }
   | { name: 'progress' }
   | { name: 'rewards' }
@@ -27,6 +28,10 @@ export function lessonHref(packId: string): string {
   return `#/aprender/${encodeURIComponent(packId)}`;
 }
 
+export function characterHref(packId: string, characterId: string): string {
+  return `${lessonHref(packId)}/${encodeURIComponent(characterId)}`;
+}
+
 /** Convierte un hash (`#/pizarra`) en una ruta tipada. */
 export function parseRoute(hash: string): AppRoute {
   const path = normalizePath(hash);
@@ -35,11 +40,21 @@ export function parseRoute(hash: string): AppRoute {
     return { name: 'home' };
   }
 
-  const [first, second] = path.split('/');
+  const [first, second, third] = path.split('/');
 
   switch (first) {
     case 'aprender':
-      return second ? { name: 'lesson', packId: decodeURIComponent(second) } : { name: 'learning' };
+      if (!second) {
+        return { name: 'learning' };
+      }
+      if (third) {
+        return {
+          name: 'trace',
+          packId: decodeURIComponent(second),
+          characterId: decodeURIComponent(third),
+        };
+      }
+      return { name: 'lesson', packId: decodeURIComponent(second) };
     case 'pizarra':
       return { name: 'doodle' };
     case 'progreso':
@@ -53,7 +68,13 @@ export function parseRoute(hash: string): AppRoute {
 
 /** Clave estable para reiniciar animaciones o hacer scroll al cambiar de pantalla. */
 export function routeKey(route: AppRoute): string {
-  return route.name === 'lesson' ? `lesson:${route.packId}` : route.name;
+  if (route.name === 'lesson') {
+    return `lesson:${route.packId}`;
+  }
+  if (route.name === 'trace') {
+    return `trace:${route.packId}:${route.characterId}`;
+  }
+  return route.name;
 }
 
 function normalizePath(hash: string): string {

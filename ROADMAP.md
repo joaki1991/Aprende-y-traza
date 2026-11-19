@@ -9,8 +9,8 @@ Leyenda: ✅ completado · 🚧 en curso · ⏳ pendiente
 | Sprint | Objetivo | Estado |
 | --- | --- | --- |
 | 0 | Arquitectura, base técnica, PWA y Android | ✅ |
-| 1 | Sistema visual definitivo y navegación infantil | ⏳ |
-| 2 | Motor de trazado y definiciones SVG de mayúsculas | ⏳ |
+| 1 | Motor de trazado educativo y ficha de la A | ✅ |
+| 2 | Sistema visual definitivo y 27 mayúsculas | ⏳ |
 | 3 | Flujo de lecciones y evaluación | ⏳ |
 | 4 | Minúsculas, números y escalado de contenidos | ⏳ |
 | 5 | Progreso detallado y persistencia avanzada | ⏳ |
@@ -44,9 +44,34 @@ Leyenda: ✅ completado · 🚧 en curso · ⏳ pendiente
 
 ---
 
-## Sprint 1 — Sistema visual definitivo y navegación infantil ⏳
+## Sprint 1 — Motor de trazado educativo y ficha de la A ✅
 
-**Objetivo:** convertir la interfaz provisional en una experiencia pulida, coherente y validada con la usuaria real.
+**Objetivo:** implementar el primer motor funcional de trazado con una ficha completa para la A mayúscula, evaluación geométrica y persistencia local.
+
+**Entregables:**
+
+- `CharacterTrace` y `TraceStroke` ampliados de forma compatible (`instruction`, `tolerance`).
+- Tres trazos ordenados para la A mayúscula en `src/modules/lessons/traces/`.
+- Muestreador SVG propio para `M/L/H/V/C/S/Q/T/Z`, en coordenadas del `viewBox`.
+- Validación de inicio, cobertura, desviación, dirección, progreso, final, longitud y orden.
+- Detección de trazo equivocado y rechazo de garabatos.
+- Sesión pura que impone el orden y permite reintentar sin penalización.
+- Pantalla de trazado con guía SVG, flecha, pasos, Mochi, celebración y botones grandes.
+- Canvas transparente con Pointer Events, captura, DPR, `ResizeObserver` y limpieza.
+- Persistencia de intentos, rondas completadas, precisión y fecha en IndexedDB.
+- 39 pruebas nuevas (72 en total), incluida la integración del flujo completo.
+- `docs/sprint-1.md`, ADR nuevos, arquitectura, README y roadmap actualizados.
+- APK debug regenerado.
+
+**Criterio de aceptación:** se completa la A con el dedo siguiendo el orden, el motor rechaza garabatos y trazos fuera de orden, el resultado se guarda en IndexedDB y lint, typecheck, pruebas y build pasan.
+
+**Evidencia:** [`docs/sprint-1.md`](docs/sprint-1.md).
+
+---
+
+## Sprint 2 — Sistema visual definitivo y 27 mayúsculas ⏳
+
+**Objetivo:** pulir la experiencia infantil y completar el catálogo de mayúsculas sobre el motor ya existente.
 
 **Alcance:**
 
@@ -56,31 +81,15 @@ Leyenda: ✅ completado · 🚧 en curso · ⏳ pendiente
 - Ajustar animaciones y respetar `prefers-reduced-motion`.
 - Revisar contraste, foco y etiquetas accesibles.
 - Pantalla de ajustes para adultos (sin datos personales): reset de progreso, información de privacidad y versión.
-- Pruebas de regresión visual básicas y de navegación.
+- Definir los `CharacterTrace` de las 26 mayúsculas restantes, con inicio, fin, orden, instrucciones y tolerancias.
+- Ampliar el muestreador SVG si alguna letra necesita arcos.
+- Pruebas de integridad de todos los trazos (ids, orden, extremos, `viewBox`) y de regresión de navegación.
 
-**Criterio de aceptación:** recorrido completo sin callejones sin salida; ningún target táctil principal por debajo de 56 px; sin desbordamientos a 360 px; revisión con la niña documentada.
+**Criterio de aceptación:** las 27 mayúsculas son trazables con evaluación coherente; recorrido completo sin callejones sin salida; ningún target táctil principal por debajo de 56 px; sin desbordamientos a 360 px; revisión con la niña documentada.
 
-**Riesgos:** sobrecargar la interfaz con texto; corregir con observación real, no solo con suposiciones.
+**Riesgos:** definiciones SVG imprecisas; tolerancias demasiado estrictas en letras con curvas; sobrecargar la interfaz con texto.
 
----
-
-## Sprint 2 — Motor de trazado y definiciones SVG de mayúsculas ⏳
-
-**Objetivo:** implementar el corazón educativo: trazar letras con evaluación tolerante y feedback inmediato.
-
-**Alcance:**
-
-- Definir `CharacterTrace` y `TraceStroke` completos para las 27 mayúsculas en `src/modules/lessons/traces/`.
-- Renderizar guías SVG: contorno, línea de inicio, dirección y orden de trazos.
-- Capa Canvas para el trazo del dedo reutilizando las utilidades de `tracing/`.
-- Evaluación por proximidad al recorrido, cobertura y dirección; umbrales configurables.
-- Feedback visual y háptico ligero (sin castigar): chispa, sonido futuro, reintento.
-- Botón de borrar, repetir y “mostrar cómo se hace”.
-- Pruebas unitarias de geometría, normalización y evaluación.
-
-**Criterio de aceptación:** una niña puede trazar las 27 mayúsculas en un móvil real; la evaluación no bloquea trazos imperfectos; 60 fps percibidos en gama media; sin fugas de memoria al entrar y salir 20 veces.
-
-**Riesgos:** definiciones SVG imprecisas; evaluación demasiado estricta; rendimiento en Android de gama baja.
+**Dependencias:** Sprint 1.
 
 ---
 

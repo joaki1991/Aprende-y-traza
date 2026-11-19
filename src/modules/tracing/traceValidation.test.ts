@@ -1,0 +1,154 @@
+import { describe, expect, it } from 'vitest';
+import type { CharacterTrace, TracePoint, TraceStroke } from '@/modules/lessons/lesson.types';
+import { getCharacterTrace } from '@/modules/lessons/traces';
+import { samplePath, toViewBoxPoint } from './traceGeometry';
+import { evaluateStroke, type TraceValidationResult } from './traceValidation';
+
+function loadTrace(): CharacterTrace {
+  const trace = getCharacterTrace('upper-a');
+  if (!trace) {
+    throw new Error('La A mayúscula debería tener trazos registrados.');
+  }
+  return trace;
+}
+
+const trace = loadTrace();
+
+function strokeAt(index: number): TraceStroke {
+  const stroke = trace.strokes[index];
+  if (!stroke) {
+    throw new Error(`No existe el trazo ${index}.`);
+  }
+  return stroke;
+}
+
+/** Puntos a lo largo del recorrido oficial, entre dos proporciones. */
+function pointsAlong(stroke: TraceStroke, from = 0, to = 1): TracePoint[] {
+  const polyline = samplePath(stroke.path, 2);
+  return polyline.points.filter((_, index) => {
+    const ratio = (polyline.cumulative[index] ?? 0) / Math.max(1, polyline.length);
+    return ratio >= from - 1e-6 && ratio <= to + 1e-6;
+  });
+}
+
+function shift(points: readonly TracePoint[], dx: number, dy: number): TracePoint[] {
+  return points.map((point) => ({ x: point.x + dx, y: point.y + dy }));
+}
+
+function evaluate(index: number, points: readonly TracePoint[]): TraceValidationResult {
+  const stroke = strokeAt(index);
+  return evaluateStroke(points, stroke, trace, {
+    remainingStrokes: trace.strokes.slice(index + 1),
+  });
+}
+
+describe('validación de trazos', () => {
+  it('acepta los tres trazos de la A dibujados en orden', () => {
+    for (let index = 0; index < trace.strokes.length; index += 1) {
+      const result = evaluate(index, pointsAlong(strokeAt(index)));
+      expect(result.accepted, `trazo ${index + 1}: ${result.issues.join(', ')}`).toBe(true);
+      expect(result.issues).toEqual([]);
+      expect(result.metrics.coverage).toBeGreaterThan(0.95);
+      expect(result.metrics.direction).toBeGreaterThan(0.9);
+    }
+  });
+
+  it('rechaza un trazo invertido', () => {
+    const inverted = [...pointsAlong(strokeAt(0))].reverse();
+    const result = evaluate(0, inverted);
+
+    expect(result.accepted).toBe(false);
+    expect(result.issues).toContain('start-too-far');
+    expect(result.issues.some((issue) => issue === 'backwards' || issue === 'incomplete')).toBe(
+      true,
+    );
+  });
+
+  it('rechaza un inicio fuera de tolerancia', () => {
+    const result = evaluate(0, pointsAlong(strokeAt(0), 0.28, 1));
+
+    expect(result.accepted).toBe(false);
+    expect(result.issues).toContain('start-too-far');
+    expect(result.metrics.startDistance).toBeGreaterThan(10);
+  });
+
+  it('rechaza un final fuera de tolerancia', () => {
+    const result = evaluate(0, pointsAlong(strokeAt(0), 0, 0.68));
+
+    expect(result.accepted).toBe(false);
+    expect(result.issues).toContain('finish-too-far');
+    expect(result.metrics.endDistance).toBeGreaterThan(10);
+  });
+
+  it('rechaza un recorrido incompleto', () => {
+    const result = evaluate(1, pointsAlong(strokeAt(1), 0, 0.35));
+
+    expect(result.accepted).toBe(false);
+    expect(result.issues).toContain('incomplete');
+    expect(result.metrics.coverage).toBeLessThan(0.6);
+  });
+
+  it('rechaza una desviación excesiva', () => {
+    const deviated = shift(pointsAlong(strokeAt(0)), 26, 0);
+    const result = evaluate(0, deviated);
+
+    expect(result.accepted).toBe(false);
+    expect(result.issues).toContain('off-path');
+    expect(result.metrics.accuracy).toBeLessThan(0.2);
+  });
+
+  it('rechaza un trazo demasiado corto', () => {
+    const result = evaluate(0, pointsAlong(strokeAt(0)).slice(0, 2));
+
+    expect(result.accepted).toBe(false);
+    expect(result.issues).toContain('too-short');
+  });
+
+  it('detecta que se ha dibujado el trazo siguiente', () => {
+    const result = evaluate(0, pointsAlong(strokeAt(1)));
+
+    expect(result.accepted).toBe(false);
+    expect(result.issues).toContain('wrong-order');
+    expect(result.orderHint).toBe(2);
+  });
+
+  it('no aprueba un garabato que recorre la letra de cualquier manera', () => {
+    const scribble: TracePoint[] = [];
+    for (let index = 0; index <= 40; index += 1) {
+      scribble.push({
+        x: index % 2 === 0 ? 16 : 84,
+        y: 14 + index * 2.7,
+      });
+    }
+
+    const result = evaluate(0, scribble);
+    expect(result.accepted).toBe(false);
+    expect(
+      result.issues.some((issue) =>
+        ['scribble', 'off-path', 'incomplete', 'backwards'].includes(issue),
+      ),
+    ).toBe(true);
+  });
+
+  it('da el mismo resultado en pantallas de distinto tamaño', () => {
+    const source = pointsAlong(strokeAt(2));
+    const sizes = [
+      { left: 0, top: 0, width: 340, height: 476 },
+      { left: 24, top: 12, width: 680, height: 952 },
+    ];
+    const viewBox = { minX: 0, minY: 0, width: 100, height: 140 };
+
+    for (const rect of sizes) {
+      const screenPoints = source.map((point) =>
+        toViewBoxPoint(
+          rect.left + (point.x / 100) * rect.width,
+          rect.top + (point.y / 140) * rect.height,
+          rect,
+          viewBox,
+        ),
+      );
+      const result = evaluate(2, screenPoints);
+      expect(result.accepted, JSON.stringify(result.issues)).toBe(true);
+    }
+  });
+});

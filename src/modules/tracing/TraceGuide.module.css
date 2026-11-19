@@ -1,0 +1,120 @@
+.guide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.base {
+  stroke: #d8c9df;
+  stroke-width: 2.6;
+  transition: stroke 0.25s var(--ease-soft);
+}
+
+.base[data-state='current'] {
+  stroke: #ff9fbe;
+}
+
+.base[data-state='completed'] {
+  stroke: #b9ead9;
+}
+
+.current {
+  stroke: rgba(255, 143, 174, 0.26);
+  stroke-width: 8;
+  stroke-dasharray: 12 10;
+  animation: guide-march 2.4s linear infinite;
+}
+
+.completed {
+  stroke: #63d6b1;
+  stroke-width: 5.6;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: guide-draw 0.5s var(--ease-soft) forwards;
+}
+
+.startDot {
+  fill: #ffffff;
+  stroke: #c9b3cf;
+  stroke-width: 1.6;
+}
+
+.startDot[data-state='current'] {
+  fill: #ffeff5;
+  stroke: #ff6f9f;
+  stroke-width: 2.2;
+}
+
+.startDot[data-state='completed'] {
+  fill: #e6fbf4;
+  stroke: #63d6b1;
+}
+
+.startRing {
+  fill: none;
+  stroke: #ff9fbe;
+  stroke-width: 1.8;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: guide-pulse 1.8s var(--ease-soft) infinite;
+}
+
+.arrow path {
+  fill: #ff6f9f;
+  stroke: #ffffff;
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: guide-nudge 1.6s var(--ease-soft) infinite;
+}
+
+.baseline {
+  stroke: #e7dbe9;
+  stroke-width: 1.2;
+  stroke-dasharray: 3 5;
+  stroke-linecap: round;
+}
+
+@keyframes guide-march {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -44;
+  }
+}
+
+@keyframes guide-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes guide-pulse {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.7);
+  }
+  70% {
+    opacity: 0;
+    transform: scale(1.55);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.55);
+  }
+}
+
+@keyframes guide-nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(2.5px);
+  }
+}

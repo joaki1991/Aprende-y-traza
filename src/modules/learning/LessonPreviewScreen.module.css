@@ -91,8 +91,14 @@
   gap: 8px;
 }
 
-.chip {
+.grid > li {
   display: flex;
+}
+
+.chip {
+  position: relative;
+  display: flex;
+  width: 100%;
   min-height: 74px;
   flex-direction: column;
   align-items: center;
@@ -103,6 +109,41 @@
   border: 2px solid rgba(255, 255, 255, 0.9);
   border-radius: 17px;
   box-shadow: 0 3px 0 rgba(124, 92, 120, 0.07);
+  transition:
+    transform 0.18s var(--ease-bounce),
+    box-shadow 0.18s var(--ease-bounce);
+}
+
+.available {
+  background: linear-gradient(160deg, #fff8fb 0%, #ffe3ee 100%);
+  border-color: #ffc7dc;
+  box-shadow: 0 4px 0 #f4c3d6;
+}
+
+.available:hover,
+.available:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #f4c3d6;
+}
+
+.available:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #f4c3d6;
+}
+
+.play {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  width: 19px;
+  height: 19px;
+  place-items: center;
+  color: #a8476d;
+  font-size: 0.48rem;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(124, 92, 120, 0.16);
 }
 
 .glyph {
