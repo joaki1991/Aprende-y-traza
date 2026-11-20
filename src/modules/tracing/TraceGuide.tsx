@@ -27,10 +27,17 @@ export function TraceGuide({ trace, currentStrokeIndex, pulseKey = 0 }: TraceGui
       : null;
   const arrowAngle = arrow ? (arrow.angle * 180) / Math.PI : 0;
 
+  /*
+   * La guía ocupa exactamente el mismo rectángulo que el canvas. Al no
+   * conservar la proporción, SVG y Canvas comparten la misma transformación
+   * incluso si el borde del tablero resta algún píxel, así que la tinta del
+   * dedo nunca se desplaza respecto a los puntitos.
+   */
   return (
     <svg
       className={styles.guide}
       viewBox={trace.viewBox}
+      preserveAspectRatio="none"
       aria-hidden="true"
       focusable="false"
       xmlns="http://www.w3.org/2000/svg"

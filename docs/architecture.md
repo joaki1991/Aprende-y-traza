@@ -1,6 +1,6 @@
 # Arquitectura — Aprende y Traza
 
-Documento vivo. Describe cómo está organizado el proyecto tras el Sprint 1 y qué contratos deben respetarse al añadir el resto de fichas y los sprints siguientes.
+Documento vivo. Describe cómo está organizado el proyecto tras el Sprint 1.5 y qué contratos deben respetarse al añadir el resto de fichas y los sprints siguientes.
 
 ## 1. Visión general
 
@@ -157,7 +157,9 @@ ronda completa → celebración + registro en IndexedDB
 pointercancel / lostcapture → descarta la tinta y libera el puntero
 ```
 
-El tablero usa SVG + Canvas superpuestos con proporción 5:7 para que ambas capas compartan el mismo sistema de coordenadas. No debe añadirse otra librería de dibujo.
+El tablero usa SVG + Canvas superpuestos con proporción 5:7 para que ambas capas compartan el mismo sistema de coordenadas. La guía SVG declara `preserveAspectRatio="none"` para aplicar exactamente la misma transformación que el canvas, de modo que la tinta nunca se desplaza respecto a los puntitos aunque el borde del tablero reste algún píxel. No debe añadirse otra librería de dibujo.
+
+El tamaño del tablero se deriva del alto real del viewport (`calc((100dvh - …) * 5 / 7)`), no de píxeles fijos, y conserva `aspect-ratio: 5 / 7` en vertical y horizontal. En horizontal la pantalla usa CSS Grid con dos zonas: el tablero ocupa la columna izquierda a todo el alto y la zona auxiliar (Mochi, pasos, pista y controles) queda a la derecha.
 
 ### Progress
 
@@ -212,7 +214,8 @@ Se guarda un único registro `{ id: 'default', data }` en el store `progress`.
 - Solo se registra en producción web y nunca en Capacitor.
 - Precache de JS, CSS, HTML, SVG, PNG, ICO, webmanifest, WOFF2 y WAV.
 - `navigateFallback: index.html` y limpieza de cachés antiguas.
-- Manifest: nombre, colores, orientación vertical, iconos `any` y `maskable`.
+- Manifest: nombre, colores, orientación libre (`any`), iconos `any` y `maskable`.
+- `viewport-fit=cover` y tokens de safe area para notch y barras del sistema.
 
 ### Native
 
@@ -225,7 +228,11 @@ Se guarda un único registro `{ id: 'default', data }` en el store `progress`.
 - `styles/base.css`: reset, fondo degradado, foco visible, animaciones suaves y `prefers-reduced-motion`.
 - CSS Modules por componente/pantalla.
 - Componentes compartidos: `AppShell`, `Screen`, `ScreenHeader`, `BigTile`, `BigActionLink`, `StarPill`, iconos SVG y mascota Mochi.
-- La interfaz está limitada a `--content-max: 560px` y centrada; el diseño prioritario es 360–430 px de ancho.
+- **Diseño adaptable por tamaño real del viewport**, no por orientación declarada:
+  - vertical: columna centrada de hasta 560 px;
+  - horizontal: `(min-width: 600px) and (min-aspect-ratio: 1/1)`, con `AppShell` de hasta 1120 px (1200 px en pantallas grandes) y pantallas reorganizadas en dos columnas;
+  - variantes compactas con `max-height: 540px` y `max-height: 430px` para móviles tumbados.
+- `AppShell` aplica padding con `env(safe-area-inset-*)` y oculta el pie en horizontal de poca altura.
 - Los textos son cortos y en español; los iconos permiten usar la app sin leer.
 
 ## 7. Manejo de errores
@@ -245,18 +252,21 @@ Se guarda un único registro `{ id: 'default', data }` en el store `progress`.
 ## 8. Pruebas
 
 - Vitest 4 + jsdom + Testing Library.
-- `src/test/setup.ts`: `jest-dom`, `fake-indexeddb/auto`, limpieza tras cada test, stub de `ResizeObserver`, `scrollTo` y un contexto Canvas 2D mínimo para jsdom.
-- 11 archivos, 72 pruebas en Sprint 1:
+- `src/test/setup.ts`: `jest-dom`, `fake-indexeddb/auto`, limpieza tras cada test, `ResizeObserver` controlable, `scrollTo` y un contexto Canvas 2D mínimo para jsdom.
+- `src/test/resizeObserver.ts`: doble que conserva los observadores activos y permite dispararlos con `triggerResizeObservers()` para simular giros y redimensionados.
+- 12 archivos, 81 pruebas en Sprint 1.5:
   - Router y rutas (incluida la ficha de carácter).
   - Contenidos (64 caracteres, ids únicos, Ñ, palabras).
   - Resumen de progreso y casos corruptos.
   - Repositorio IndexedDB (guardado, suma, reset, práctica, datos inválidos).
   - Utilidades de dibujo (normalización, recorte, puntos, grosor, paleta).
   - Geometría del trazado (muestreo SVG, distancias, conversión de coordenadas).
-  - Validación (correcto, invertido, extremos, incompleto, desviación, garabato, orden y tamaños).
+  - Validación (correcto, invertido, extremos, incompleto, desviación, garabato, orden, tamaños horizontal/tablet y tolerancias estables).
   - Sesión ordenada (avance, saltos, reintento, reset y precisión).
   - Recompensas (hitos, desbloqueo).
-  - Integración de la app y del flujo A → ejercicio → celebración → IndexedDB.
+  - Integración de la app y del flujo A → ejercicio → celebración → IndexedDB, incluida la finalización tras girar a horizontal.
+  - Pantallas principales en viewports horizontales.
+  - Guarda de configuración de orientación (manifest Android, manifest PWA y viewport).
 
 Criterio: la lógica nueva debe llegar con pruebas; los errores y datos corruptos también se prueban. La interacción táctil real se verifica en Chromium; jsdom solo aporta dobles de Canvas.
 
@@ -314,5 +324,6 @@ El Sprint 9 (o el Sprint 2 si se amplía el catálogo) medirá memoria y fps en 
 - [`technical-decisions.md`](technical-decisions.md): por qué se eligió cada pieza.
 - [`sprint-0.md`](sprint-0.md): evidencia de validación del Sprint 0.
 - [`sprint-1.md`](sprint-1.md): motor de trazado, algoritmo y validación del Sprint 1.
+- [`sprint-1.5.md`](sprint-1.5.md): orientación vertical/horizontal, distribuciones y verificación.
 - [`../ROADMAP.md`](../ROADMAP.md): secuencia de sprints.
 - [`../AGENTS.md`](../AGENTS.md): reglas de contribución.

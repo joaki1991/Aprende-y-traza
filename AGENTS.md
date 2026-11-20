@@ -6,8 +6,8 @@ Guía para agentes de OpenCode y para cualquier persona que contribuya a **Apren
 
 - App educativa kawaii para una niña de ~4 años: trazar mayúsculas, minúsculas y números.
 - Interfaz en **español**; identificadores de código en **inglés**.
-- Prioridad absoluta: **móvil Android vertical**, botones grandes, lectura mínima, uso con dedos pequeños.
-- Estado actual: **Sprint 1 cerrado**. El motor de trazado está implementado y la ficha de la A mayúscula es la única completa. No implementes el resto de fichas ni funcionalidades de sprints futuros sin que se pida explícitamente.
+- Prioridad absoluta: **móvil Android**, con diseño completo para vertical y horizontal, botones grandes, lectura mínima y uso con dedos pequeños.
+- Estado actual: **Sprint 1.5 cerrado**. El motor de trazado está implementado, la ficha de la A mayúscula es la única completa y toda la interfaz funciona en vertical y horizontal. No implementes el resto de fichas ni funcionalidades de sprints futuros sin que se pida explícitamente.
 
 ## 2. Reglas irrenunciables
 
@@ -119,7 +119,7 @@ Reglas para ampliar el motor:
 - Configuración en `vite.config.ts` (`VitePWA`).
 - El service worker se registra **solo** en build de producción web; nunca en desarrollo ni en Capacitor (`registerPwa.ts`).
 - Si añades assets nuevos (sonidos, imágenes), incluye su extensión en `globPatterns` si corresponde.
-- Mantén el manifest en español, orientación `portrait` y colores `#ffd6e7` / `#fff6fb`.
+- Mantén el manifest en español, orientación `any` y colores `#ffd6e7` / `#fff6fb`.
 - Al cambiar el icono, ejecuta `npm run icons`; no edites PNG a mano.
 - Verifica el modo offline con `npm run build && npm run preview`, recarga una vez y luego desactiva la red.
 
@@ -128,7 +128,7 @@ Reglas para ampliar el motor:
 - Configuración: `capacitor.config.ts`; proyecto nativo en `android/`.
 - Tras cambiar assets web o plugins: `npm run android:sync`.
 - No edites `android/app/src/main/assets/public/` ni los JSON generados; se sobrescriben.
-- Mantén `screenOrientation="portrait"`, el nombre `Aprende y Traza` y el id `com.aprendeytraza.app`.
+- No bloquees la orientación: mantén `android:configChanges` con `orientation` y `screenSize`, el nombre `Aprende y Traza` y el id `com.aprendeytraza.app`. Al girar no debe recrearse la actividad ni perderse la ronda.
 - El botón Atrás se gestiona en `src/modules/native/hardwareBack.ts`. Si añades rutas nuevas, comprueba que el historial sigue funcionando.
 - No añadas permisos Android que no sean necesarios. `INTERNET` se conserva por el funcionamiento estándar de Capacitor, pero la app no debe hacer peticiones de red.
 - Los iconos y splash se regeneran con `npm run icons` en `android/app/src/main/res/`.

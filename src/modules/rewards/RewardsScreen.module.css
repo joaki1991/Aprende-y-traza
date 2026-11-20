@@ -173,3 +173,117 @@
   border: 2px dashed rgba(255, 159, 190, 0.32);
   border-radius: var(--radius-md);
 }
+
+/*
+ * Horizontal: la información a la izquierda y las pegatinas en una cuadrícula
+ * de tres columnas a la derecha, para no alargar la pantalla en exceso.
+ */
+@media (min-width: 600px) and (min-aspect-ratio: 1/1) {
+  .screen {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.7fr) minmax(0, 1.3fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    gap: 10px 20px;
+    min-height: 0;
+  }
+
+  .screen > header {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .banner {
+    grid-column: 1;
+    grid-row: 2;
+    padding: 12px;
+  }
+
+  .nextGoal {
+    grid-column: 1;
+    grid-row: 3;
+    margin: 0;
+  }
+
+  .grid {
+    grid-column: 2;
+    grid-row: 2 / span 3;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-content: start;
+    gap: 9px;
+  }
+
+  .sticker {
+    min-height: 128px;
+    padding: 6px 8px 8px;
+  }
+
+  .art {
+    height: 66px;
+  }
+
+  .art svg {
+    width: 66px;
+    height: 66px;
+  }
+
+  .name {
+    font-size: 0.86rem;
+  }
+
+  .description {
+    font-size: 0.56rem;
+  }
+
+  .note {
+    grid-column: 1;
+    grid-row: 4;
+    align-self: end;
+    margin-top: 0;
+    padding: 8px 12px;
+    text-align: left;
+  }
+}
+
+@media (max-height: 430px) and (min-aspect-ratio: 1/1) {
+  .screen {
+    gap: 8px 16px;
+  }
+
+  .banner {
+    padding: 8px 12px;
+  }
+
+  .bannerCopy h2 {
+    font-size: 1.15rem;
+  }
+
+  .bannerCopy p {
+    display: none;
+  }
+
+  .nextGoal {
+    padding: 6px 10px;
+    font-size: 0.72rem;
+  }
+
+  .sticker {
+    min-height: 104px;
+  }
+
+  .art {
+    height: 54px;
+  }
+
+  .art svg {
+    width: 54px;
+    height: 54px;
+  }
+
+  .description {
+    display: none;
+  }
+
+  .note {
+    display: none;
+  }
+}

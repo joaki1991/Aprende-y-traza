@@ -369,3 +369,44 @@ La puntuación es `0.45 × cobertura + 0.35 × precisión + 0.20 × dirección`.
 - Los datos antiguos siguen siendo válidos y se normalizan al leer.
 - La economía de estrellas queda libre para un sprint posterior sin migración destructiva.
 - Cerrar la app a mitad de ronda no registra ese intento parcial; se evita escribir en cada movimiento para no castigar el rendimiento.
+
+---
+
+## ADR-022 — Orientación libre y breakpoints por tamaño real del viewport
+
+**Fecha:** 2026-11-20 · **Estado:** aceptada · **Sustituye en parte a:** ADR-009
+
+**Contexto:** la app nació bloqueada en vertical (manifest Android, manifest PWA y una columna de 560 px). Una niña pequeña suele girar el móvil y muchos tablets se usan en horizontal; mantener el bloqueo desperdicia espacio y obliga a una experiencia estirada. A la vez, girar no puede recargar la app ni perder la ronda en curso.
+
+**Decisión:**
+
+- Quitar `android:screenOrientation` del manifest y conservar `configChanges` con `orientation` y `screenSize` para que Android no recree la actividad.
+- Declarar `orientation: 'any'` en el manifest PWA.
+- Elegir las variantes de layout por tamaño real (`min-width`, `max-height`, `min-aspect-ratio`), no por `orientation`.
+- Mantener la columna vertical como base y añadir una distribución horizontal de dos columnas para portada, aprender, vista previa, progreso, recompensas y trazado.
+- Derivar el tamaño del tablero del alto disponible (`calc((100dvh - …) * 5 / 7)`), conservando la proporción 5:7.
+- Aplicar safe areas con `env(safe-area-inset-*)` en el shell.
+
+**Consecuencias:**
+
+- La app funciona en vertical y horizontal sin recargas ni pérdida de estado.
+- El tablero no se encoge por culpa de las instrucciones en horizontal.
+- Los breakpoints reaccionan a barras del navegador, ventanas redimensionadas y pantallas plegables, no solo a la orientación declarada.
+- Un target secundario puede bajar a 48 px en horizontal de poca altura, siempre por encima de 44 px.
+- Queda pendiente verificar la rotación física y las safe areas en un dispositivo Android real.
+
+---
+
+## ADR-023 — La guía SVG comparte la transformación exacta del canvas
+
+**Fecha:** 2026-11-20 · **Estado:** aceptada
+
+**Contexto:** el tablero tiene un borde de 3 px y `aspect-ratio: 5 / 7`, así que el área interior no es exactamente 5:7 (por ejemplo, 320 × 450). Con `preserveAspectRatio` por defecto, el SVG centra el `viewBox` y deja una franja de menos de un píxel, mientras el canvas mapea la tinta a todo el rectángulo. La desviación es pequeña, pero rompe la promesa de alineación perfecta entre guía y tinta.
+
+**Decisión:** declarar `preserveAspectRatio="none"` en la guía SVG para que el `viewBox` se estire exactamente al mismo rectángulo que usa el canvas. Ambos comparten así la misma transformación afín, independientemente del tamaño o de los bordes.
+
+**Consecuencias:**
+
+- La guía y la tinta quedan alineadas en cualquier orientación y tamaño, incluso si el contenedor redondea algún píxel.
+- La deformación máxima es inferior al 1 % y es idéntica para la guía y para el trazo, por lo que no afecta a la validación (que trabaja en coordenadas del `viewBox`).
+- Las pruebas de geometría y validación no cambian: el motor sigue siendo independiente del DOM.

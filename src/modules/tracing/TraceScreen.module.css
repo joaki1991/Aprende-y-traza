@@ -310,3 +310,135 @@
     transform: translateY(-7px) rotate(2deg);
   }
 }
+
+/*
+ * Horizontal: dos zonas reales. La izquierda es el tablero y ocupa todo el
+ * alto disponible; la derecha concentra Mochi, los pasos, la pista y los
+ * controles. El tablero nunca se encoge para dejar sitio al texto.
+ *
+ * Se decide por ancho + relación de aspecto del viewport, así que las barras
+ * del navegador o una ventana redimensionada no rompen la distribución.
+ */
+@media (min-width: 600px) and (min-aspect-ratio: 1/1) {
+  .screen {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(230px, 0.85fr);
+    grid-template-rows: auto auto auto auto 1fr;
+    grid-template-areas:
+      'stage header'
+      'stage coach'
+      'stage steps'
+      'stage hint'
+      'stage actions';
+    align-items: center;
+    align-content: stretch;
+    gap: 8px 18px;
+    min-height: 0;
+  }
+
+  .screen > header {
+    grid-area: header;
+  }
+
+  .coach {
+    grid-area: coach;
+    padding: 6px 10px 6px 4px;
+  }
+
+  .mochi {
+    width: 62px;
+  }
+
+  .message {
+    font-size: 0.8rem;
+    line-height: 1.25;
+  }
+
+  .steps {
+    grid-area: steps;
+  }
+
+  .step {
+    width: 30px;
+    height: 30px;
+    font-size: 0.86rem;
+  }
+
+  .stage {
+    grid-area: stage;
+    align-self: stretch;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .board {
+    width: min(100%, calc((100dvh - 88px) * 5 / 7));
+  }
+
+  .currentHint {
+    grid-area: hint;
+    font-size: 0.72rem;
+  }
+
+  .actions {
+    grid-area: actions;
+    align-self: end;
+    margin-top: 0;
+  }
+
+  .celebration {
+    gap: 2px;
+    padding: 12px;
+  }
+
+  .celebrationMochi {
+    width: min(52%, 132px);
+  }
+
+  .celebration h2 {
+    font-size: 1.55rem;
+  }
+
+  .celebration p {
+    font-size: 0.78rem;
+  }
+
+  .again {
+    min-height: 52px;
+    margin-top: 4px;
+  }
+}
+
+/* Horizontal en móvil: alto muy justo, se compacta sin bajar de 44 px. */
+@media (max-height: 540px) and (min-aspect-ratio: 1/1) {
+  .screen {
+    gap: 6px 16px;
+  }
+
+  .board {
+    width: min(100%, calc((100dvh - 40px) * 5 / 7));
+  }
+
+  .mochi {
+    width: 54px;
+  }
+
+  .message {
+    font-size: 0.76rem;
+  }
+
+  .repeat,
+  .back,
+  .again {
+    min-height: 48px;
+    font-size: 1rem;
+  }
+
+  .celebrationMochi {
+    width: min(42%, 104px);
+  }
+
+  .celebration h2 {
+    font-size: 1.35rem;
+  }
+}

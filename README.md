@@ -2,7 +2,7 @@
 
 Aplicación educativa **kawaii** para que una niña de unos 4 años aprenda a trazar letras mayúsculas, minúsculas y números. Funciona como PWA instalable y está preparada para empaquetarse como app Android con Capacitor.
 
-> **Estado actual: Sprint 1 completado.** La app ya incluye un motor real de trazado y una ficha completa para la **A mayúscula**: guía SVG, tinta Canvas, validación de inicio/recorrido/dirección/orden, feedback amable y registro local. El resto de fichas y las minúsculas/números llegan en los siguientes sprints.
+> **Estado actual: Sprint 1.5 completado.** La app ya incluye un motor real de trazado y una ficha completa para la **A mayúscula**: guía SVG, tinta Canvas, validación de inicio/recorrido/dirección/orden, feedback amable y registro local. Además, toda la interfaz funciona en vertical y horizontal: Android y la PWA ya no bloquean la orientación y las pantallas se reorganizan para aprovechar el espacio. El resto de fichas y las minúsculas/números llegan en los siguientes sprints.
 
 ---
 
@@ -15,8 +15,9 @@ Aplicación educativa **kawaii** para que una niña de unos 4 años aprenda a tr
 - Pizarra táctil sobre Canvas con Pointer Events, captura de puntero, DPR y `ResizeObserver`.
 - Progreso y ajustes en IndexedDB, sin registro ni datos personales; el ejercicio guarda intentos, rondas completadas, precisión y fecha.
 - PWA con manifest, iconos, service worker y funcionamiento offline.
-- Proyecto Android generado con Capacitor, orientación vertical, iconos y splash propios.
-- 72 pruebas automatizadas, TypeScript estricto, ESLint y build de producción verificado.
+- Proyecto Android generado con Capacitor, orientación libre, iconos y splash propios.
+- Diseño adaptable a vertical y horizontal (móvil, tablet y ventana de escritorio) con safe areas y sin scroll horizontal.
+- 81 pruebas automatizadas, TypeScript estricto, ESLint y build de producción verificado.
 
 ## Requisitos
 
@@ -95,7 +96,7 @@ El APK queda en `android/app/build/outputs/apk/debug/app-debug.apk`.
 
 Notas:
 
-- La app está bloqueada en orientación vertical.
+- La app admite orientación vertical y horizontal; al girar no se recarga ni se pierde la ronda en curso.
 - El botón Atrás de Android vuelve a la pantalla anterior y, en la portada, cierra la app.
 - Crea `android/local.properties` con `sdk.dir=...` si Gradle no encuentra el SDK. Ese archivo está ignorado por Git.
 - Para publicar en Google Play harán falta firma release, revisión de privacidad y pruebas en dispositivos reales (ver `ROADMAP.md`).
@@ -152,6 +153,14 @@ Para añadir un alfabeto nuevo (por ejemplo, cursiva o pictogramas):
 3. Añade sus `CharacterTrace` en `traces/` y regístralos en `traces/index.ts`.
 4. Ejecuta las pruebas y actualiza `docs/architecture.md` si cambia el modelo.
 
+## Orientación y diseño adaptable
+
+- **Vertical:** columna centrada, botones grandes y texto mínimo; es la distribución prioritaria en móvil.
+- **Horizontal:** se activa por tamaño real del viewport (`min-width: 600px` y `min-aspect-ratio: 1/1`), no por la orientación declarada. La portada coloca el hero a la izquierda y las actividades a la derecha; el trazado usa dos zonas con el tablero a la izquierda a todo el alto y Mochi, pasos y controles a la derecha.
+- **Trazado:** el tablero conserva la proporción 5:7 y se dimensiona con el alto disponible, así que el texto nunca lo encoge. La guía SVG y el canvas comparten la misma transformación.
+- **Safe areas:** padding con `env(safe-area-inset-*)` para notch, barras y gestos del sistema.
+- Al girar no se recarga la app ni se pierde la ronda: Android conserva la actividad y React mantiene el estado.
+
 ## Privacidad y offline
 
 - Sin backend, sin registro, sin cuentas y sin datos personales.
@@ -172,12 +181,13 @@ npm run test:run
 npm run build
 ```
 
-Resultados de referencia del Sprint 1 y limitaciones conocidas: [`docs/sprint-1.md`](docs/sprint-1.md). El Sprint 0 queda documentado en [`docs/sprint-0.md`](docs/sprint-0.md).
+Resultados de referencia del Sprint 1.5: [`docs/sprint-1.5.md`](docs/sprint-1.5.md). El Sprint 1 queda documentado en [`docs/sprint-1.md`](docs/sprint-1.md) y el Sprint 0 en [`docs/sprint-0.md`](docs/sprint-0.md).
 
 ## Documentación
 
 - [`docs/architecture.md`](docs/architecture.md): arquitectura, capas, flujos y guías de extensión.
 - [`docs/technical-decisions.md`](docs/technical-decisions.md): registro de decisiones técnicas (ADR).
+- [`docs/sprint-1.5.md`](docs/sprint-1.5.md): orientación adaptable, distribuciones y verificación.
 - [`docs/sprint-1.md`](docs/sprint-1.md): motor de trazado, algoritmo de validación, pruebas y limitaciones.
 - [`docs/sprint-0.md`](docs/sprint-0.md): entregables y validación de la base técnica.
 - [`ROADMAP.md`](ROADMAP.md): plan de sprints.

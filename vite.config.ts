@@ -30,7 +30,7 @@ export default defineConfig({
         scope: './',
         display: 'standalone',
         display_override: ['standalone', 'minimal-ui'],
-        orientation: 'portrait',
+        orientation: 'any',
         background_color: '#fff6fb',
         theme_color: '#ffd6e7',
         categories: ['education', 'kids'],

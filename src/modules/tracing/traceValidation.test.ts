@@ -130,11 +130,14 @@ describe('validación de trazos', () => {
     ).toBe(true);
   });
 
-  it('da el mismo resultado en pantallas de distinto tamaño', () => {
+  it('da el mismo resultado en pantallas de distinto tamaño y orientación', () => {
     const source = pointsAlong(strokeAt(2));
     const sizes = [
       { left: 0, top: 0, width: 340, height: 476 },
       { left: 24, top: 12, width: 680, height: 952 },
+      // Tablero horizontal y tablet: misma proporción 5:7, distinto tamaño.
+      { left: 0, top: 0, width: 250, height: 350 },
+      { left: 40, top: 8, width: 900, height: 1260 },
     ];
     const viewBox = { minX: 0, minY: 0, width: 100, height: 140 };
 
@@ -149,6 +152,32 @@ describe('validación de trazos', () => {
       );
       const result = evaluate(2, screenPoints);
       expect(result.accepted, JSON.stringify(result.issues)).toBe(true);
+      expect(result.metrics.coverage).toBeGreaterThan(0.95);
     }
+  });
+
+  it('mantiene las tolerancias en coordenadas del viewBox al girar', () => {
+    // Un desplazamiento pequeño en píxeles equivale a más unidades del viewBox
+    // en un tablero pequeño. La tolerancia debe seguir siendo la misma fracción.
+    const source = pointsAlong(strokeAt(0));
+    const landscape = { left: 0, top: 0, width: 250, height: 350 };
+    const viewBox = { minX: 0, minY: 0, width: 100, height: 140 };
+
+    const accepted = source.map((point) =>
+      toViewBoxPoint(
+        (point.x / 100) * landscape.width,
+        (point.y / 140) * landscape.height,
+        landscape,
+        viewBox,
+      ),
+    );
+    expect(evaluate(0, accepted).accepted).toBe(true);
+
+    // Desviar 12 unidades del viewBox supera la tolerancia de la A (11 % del
+    // lado menor = 11) con independencia del tamaño de pantalla.
+    const deviated = accepted.map((point) => ({ x: point.x + 12, y: point.y }));
+    const result = evaluate(0, deviated);
+    expect(result.accepted).toBe(false);
+    expect(result.metrics.accuracy).toBeLessThan(0.5);
   });
 });

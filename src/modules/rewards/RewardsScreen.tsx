@@ -14,7 +14,7 @@ export function RewardsScreen() {
   const nextSticker = REWARD_STICKERS.find((sticker) => !isStickerUnlocked(sticker, stars));
 
   return (
-    <Screen>
+    <Screen className={styles.screen}>
       <ScreenHeader title="Sorpresas" backHref={ROUTES.home} backLabel="Volver al inicio" />
 
       <section className={styles.banner}>

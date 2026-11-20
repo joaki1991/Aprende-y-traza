@@ -7,6 +7,7 @@ import { samplePath } from '@/modules/tracing/traceGeometry';
 import { ProgressProvider } from '@/modules/progress/ProgressProvider';
 import { loadProgress } from '@/modules/progress/progress.repository';
 import { DB_NAME, closeDatabase } from '@/modules/storage/db';
+import { triggerResizeObservers } from '@/test/resizeObserver';
 import { App } from './App';
 
 /**
@@ -36,7 +37,7 @@ if (typeof window.PointerEvent === 'undefined') {
   });
 }
 
-const CANVAS_RECT = {
+const PORTRAIT_RECT = {
   x: 0,
   y: 0,
   left: 0,
@@ -47,6 +48,25 @@ const CANVAS_RECT = {
   bottom: 476,
   toJSON: () => ({}),
 } as DOMRect;
+
+/** Tablero en horizontal: conserva la proporción 5:7 del viewBox. */
+const LANDSCAPE_RECT = {
+  x: 0,
+  y: 0,
+  left: 0,
+  top: 0,
+  width: 250,
+  height: 350,
+  right: 250,
+  bottom: 350,
+  toJSON: () => ({}),
+} as DOMRect;
+
+let canvasRect: DOMRect = PORTRAIT_RECT;
+
+function setCanvasRect(rect: DOMRect): void {
+  canvasRect = rect;
+}
 
 const contextStub = {
   fillStyle: '',
@@ -83,14 +103,21 @@ function loadTrace(): CharacterTrace {
 }
 
 /** Convierte coordenadas del viewBox a píxeles del canvas simulado. */
-function toClient(point: TracePoint): { clientX: number; clientY: number } {
+function toClient(
+  point: TracePoint,
+  rect: DOMRect,
+): { clientX: number; clientY: number } {
   return {
-    clientX: (point.x / 100) * CANVAS_RECT.width,
-    clientY: (point.y / 140) * CANVAS_RECT.height,
+    clientX: rect.left + (point.x / 100) * rect.width,
+    clientY: rect.top + (point.y / 140) * rect.height,
   };
 }
 
-function drawStroke(canvas: HTMLCanvasElement, strokeIndex: number): void {
+function drawStroke(
+  canvas: HTMLCanvasElement,
+  strokeIndex: number,
+  rect: DOMRect = canvasRect,
+): void {
   const stroke = loadTrace().strokes[strokeIndex];
   if (!stroke) {
     throw new Error(`No existe el trazo ${strokeIndex}.`);
@@ -107,7 +134,7 @@ function drawStroke(canvas: HTMLCanvasElement, strokeIndex: number): void {
     pointerId: 1,
     pointerType: 'touch',
     isPrimary: true,
-    ...toClient(first),
+    ...toClient(first, rect),
   });
 
   for (const point of points.slice(1)) {
@@ -115,7 +142,7 @@ function drawStroke(canvas: HTMLCanvasElement, strokeIndex: number): void {
       pointerId: 1,
       pointerType: 'touch',
       isPrimary: true,
-      ...toClient(point),
+      ...toClient(point, rect),
     });
   }
 
@@ -123,7 +150,7 @@ function drawStroke(canvas: HTMLCanvasElement, strokeIndex: number): void {
     pointerId: 1,
     pointerType: 'touch',
     isPrimary: true,
-    ...toClient(last),
+    ...toClient(last, rect),
   });
 }
 
@@ -150,13 +177,30 @@ async function waitForNextStroke(): Promise<void> {
   });
 }
 
+/**
+ * Simula el giro del dispositivo: cambia el rectángulo del lienzo y avisa al
+ * `ResizeObserver` como haría el navegador.
+ */
+async function rotateCanvasTo(rect: DOMRect): Promise<void> {
+  setCanvasRect(rect);
+  await act(async () => {
+    triggerResizeObservers();
+    await new Promise((resolve) => {
+      setTimeout(resolve, 40);
+    });
+  });
+}
+
 describe('flujo de trazado de la A', () => {
   beforeEach(async () => {
     await deleteTestDatabase();
+    setCanvasRect(PORTRAIT_RECT);
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
       () => contextStub as unknown as CanvasRenderingContext2D,
     );
-    vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockReturnValue(CANVAS_RECT);
+    vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockImplementation(
+      () => canvasRect,
+    );
     contextStub.clearRect.mockClear();
     contextStub.stroke.mockClear();
   });
@@ -231,5 +275,64 @@ describe('flujo de trazado de la A', () => {
 
     const pack = getLessonPack('mayusculas');
     expect(pack?.characters[0]?.id).toBe('upper-a');
+  });
+
+  it('conserva la ronda y completa la A después de girar a horizontal', async () => {
+    renderAt('#/aprender/mayusculas/upper-a');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'La A' })).toBeInTheDocument();
+    const canvas = screen.getByLabelText(/zona para trazar la letra a/i) as HTMLCanvasElement;
+
+    drawStroke(canvas, 0);
+    expect(await screen.findByText(/vuelve arriba y baja hacia la derecha/i)).toBeInTheDocument();
+    await waitForNextStroke();
+
+    await rotateCanvasTo(LANDSCAPE_RECT);
+    expect(screen.getByRole('list', { name: 'Trazo 2 de 3' })).toBeInTheDocument();
+
+    drawStroke(canvas, 1, LANDSCAPE_RECT);
+    expect(await screen.findByText(/cruza una línea en el medio/i)).toBeInTheDocument();
+    await waitForNextStroke();
+
+    drawStroke(canvas, 2, LANDSCAPE_RECT);
+
+    expect(await screen.findByRole('heading', { name: '¡Bravo!' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /otra vez/i })).toBeInTheDocument();
+
+    await waitFor(async () => {
+      const progress = await loadProgress();
+      const character = progress.characters['upper-a'];
+      expect(character?.attempts).toBe(1);
+      expect(character?.completions).toBe(1);
+      expect(character?.lastResult).toBe('completed');
+      expect(character?.bestAccuracy).toBeGreaterThan(0.5);
+    });
+  });
+
+  it('sigue rechazando un trazo fuera de orden después de girar', async () => {
+    renderAt('#/aprender/mayusculas/upper-a');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'La A' })).toBeInTheDocument();
+    const canvas = screen.getByLabelText(/zona para trazar la letra a/i) as HTMLCanvasElement;
+
+    drawStroke(canvas, 0);
+    expect(await screen.findByText(/vuelve arriba y baja hacia la derecha/i)).toBeInTheDocument();
+    await waitForNextStroke();
+
+    await rotateCanvasTo(LANDSCAPE_RECT);
+
+    // La línea del medio es el tercer trazo, no el segundo.
+    drawStroke(canvas, 2, LANDSCAPE_RECT);
+
+    expect(await screen.findByText(/primero toca este trazo/i)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '¡Bravo!' })).not.toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Trazo 2 de 3' })).toBeInTheDocument();
+
+    await waitFor(async () => {
+      const progress = await loadProgress();
+      const character = progress.characters['upper-a'];
+      expect(character?.completions).toBe(0);
+      expect(character?.lastResult).toBe('incomplete');
+    });
   });
 });

@@ -8,7 +8,7 @@ import styles from './LearningScreen.module.css';
 
 export function LearningScreen() {
   return (
-    <Screen>
+    <Screen className={styles.screen}>
       <ScreenHeader title="Aprender" backHref={ROUTES.home} backLabel="Volver al inicio" />
 
       <p className={styles.intro}>

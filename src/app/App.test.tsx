@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { ProgressProvider } from '@/modules/progress/ProgressProvider';
 import { App } from './App';
 
@@ -11,6 +11,24 @@ function renderAt(hash: string) {
     </ProgressProvider>,
   );
 }
+
+function setViewport(width: number, height: number): void {
+  Object.defineProperty(window, 'innerWidth', {
+    configurable: true,
+    writable: true,
+    value: width,
+  });
+  Object.defineProperty(window, 'innerHeight', {
+    configurable: true,
+    writable: true,
+    value: height,
+  });
+  window.dispatchEvent(new Event('resize'));
+}
+
+afterEach(() => {
+  setViewport(1024, 768);
+});
 
 describe('App', () => {
   it('muestra la portada con las actividades principales', () => {
@@ -85,5 +103,59 @@ describe('App', () => {
         .getAllByRole('link', { name: /volver al inicio/i })
         .every((link) => link.getAttribute('href') === '#/'),
     ).toBe(true);
+  });
+
+  it('mantiene la portada y sus accesos en viewport horizontal', () => {
+    setViewport(844, 390);
+    renderAt('#/');
+
+    expect(screen.getByRole('heading', { name: /jugamos a trazar/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /aprender/i })).toHaveAttribute('href', '#/aprender');
+    expect(screen.getByRole('link', { name: /pizarra/i })).toHaveAttribute('href', '#/pizarra');
+    expect(screen.getByRole('link', { name: /^estrellas/i })).toHaveAttribute(
+      'href',
+      '#/progreso',
+    );
+    expect(screen.getByRole('link', { name: /sorpresas/i })).toHaveAttribute(
+      'href',
+      '#/recompensas',
+    );
+  });
+
+  it('mantiene el menú y la selección de letras en viewport horizontal', async () => {
+    setViewport(844, 390);
+    renderAt('#/aprender');
+
+    expect(await screen.findByRole('heading', { name: 'Aprender' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /mayúsculas/i })).toHaveAttribute(
+      'href',
+      '#/aprender/mayusculas',
+    );
+    expect(screen.getByRole('link', { name: /minúsculas/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /números/i })).toBeInTheDocument();
+
+    window.location.hash = '#/aprender/mayusculas';
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Mayúsculas' })).toBeInTheDocument();
+    expect(screen.getByText(/27 letras para descubrir/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Trazar la A' })).toHaveAttribute(
+      'href',
+      '#/aprender/mayusculas/upper-a',
+    );
+  });
+
+  it('mantiene el progreso y las sorpresas en viewport horizontal', async () => {
+    setViewport(640, 360);
+    renderAt('#/progreso');
+
+    expect(await screen.findByRole('heading', { name: 'Mis estrellas' })).toBeInTheDocument();
+    expect(screen.getByText('Tu camino')).toBeInTheDocument();
+
+    window.location.hash = '#/recompensas';
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+
+    expect(await screen.findByRole('heading', { name: 'Sorpresas' })).toBeInTheDocument();
+    expect(screen.getByText('Tus pegatinas')).toBeInTheDocument();
   });
 });

@@ -12,7 +12,7 @@ export function ProgressScreen() {
   const isLoading = status === 'loading';
 
   return (
-    <Screen>
+    <Screen className={styles.screen}>
       <ScreenHeader title="Mis estrellas" backHref={ROUTES.home} backLabel="Volver al inicio" />
 
       <section className={styles.starCard} aria-label="Estrellas conseguidas">

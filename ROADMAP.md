@@ -10,6 +10,7 @@ Leyenda: ✅ completado · 🚧 en curso · ⏳ pendiente
 | --- | --- | --- |
 | 0 | Arquitectura, base técnica, PWA y Android | ✅ |
 | 1 | Motor de trazado educativo y ficha de la A | ✅ |
+| 1.5 | Orientación vertical y horizontal en todas las pantallas | ✅ |
 | 2 | Sistema visual definitivo y 27 mayúsculas | ⏳ |
 | 3 | Flujo de lecciones y evaluación | ⏳ |
 | 4 | Minúsculas, números y escalado de contenidos | ⏳ |
@@ -66,6 +67,30 @@ Leyenda: ✅ completado · 🚧 en curso · ⏳ pendiente
 **Criterio de aceptación:** se completa la A con el dedo siguiendo el orden, el motor rechaza garabatos y trazos fuera de orden, el resultado se guarda en IndexedDB y lint, typecheck, pruebas y build pasan.
 
 **Evidencia:** [`docs/sprint-1.md`](docs/sprint-1.md).
+
+---
+
+## Sprint 1.5 — Orientación vertical y horizontal ✅
+
+**Objetivo:** permitir girar el dispositivo y adaptar toda la interfaz a ambas orientaciones sin tocar el motor de trazado ni el contenido educativo.
+
+**Entregables:**
+
+- Android sin `screenOrientation` bloqueada y conservando `configChanges` para no recrear la actividad al girar.
+- Manifest PWA con `orientation: 'any'`; viewport con `viewport-fit=cover` y safe areas.
+- `AppShell` con ancho de 1120–1200 px en horizontal y padding con safe areas.
+- Portada, Aprender, vista previa de paquete, progreso y recompensas con distribución horizontal propia.
+- Pantalla de trazado horizontal en dos zonas: tablero a la izquierda a todo el alto y Mochi, pasos, pista y controles a la derecha.
+- Tablero con proporción 5:7 y anchura derivada del alto real del viewport, sin encogerse por el texto.
+- Guía SVG y Canvas con la misma transformación (`preserveAspectRatio="none"`).
+- Doble controlable de `ResizeObserver` y pruebas de giro a mitad de ronda.
+- Guarda de regresión que lee la configuración de Android y PWA.
+- 81 pruebas (12 archivos), build y APK debug.
+- `docs/sprint-1.5.md`, ADR de orientación, arquitectura, README y AGENTS actualizados.
+
+**Criterio de aceptación:** la app se usa en vertical y horizontal sin desbordamientos, la A se completa en ambas y al girar no se pierde la ronda; lint, typecheck, pruebas y build pasan.
+
+**Evidencia:** [`docs/sprint-1.5.md`](docs/sprint-1.5.md).
 
 ---
 

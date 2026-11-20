@@ -210,3 +210,87 @@
   --pack-ink: #b98516;
   --pack-soft: #fff4c9;
 }
+
+/*
+ * Horizontal: resumen a la izquierda y camino a la derecha, con la tarjeta
+ * de estrellas ocupando el alto que necesita para respirar.
+ */
+@media (min-width: 600px) and (min-aspect-ratio: 1/1) {
+  .screen {
+    display: grid;
+    grid-template-columns: minmax(230px, 0.8fr) minmax(0, 1.2fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    gap: 12px 20px;
+    min-height: 0;
+  }
+
+  .screen > header {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .starCard {
+    grid-column: 1;
+    grid-row: 2;
+    padding: 14px;
+  }
+
+  .starBadge {
+    width: 68px;
+    height: 68px;
+  }
+
+  .starCount {
+    font-size: clamp(2.2rem, 5vw, 3rem);
+  }
+
+  .errorCard {
+    grid-column: 1;
+    grid-row: 3;
+    align-self: start;
+  }
+
+  .pathSection {
+    grid-column: 2;
+    grid-row: 2 / span 2;
+    min-height: 0;
+  }
+
+  .pathList {
+    gap: 8px;
+  }
+
+  .packRow {
+    padding: 8px 12px 8px 9px;
+  }
+
+  .tip {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    margin-top: 0;
+    padding: 6px 12px 6px 6px;
+  }
+}
+
+@media (max-height: 430px) and (min-aspect-ratio: 1/1) {
+  .screen {
+    gap: 8px 16px;
+  }
+
+  .starCard {
+    padding: 10px 14px;
+  }
+
+  .starBadge {
+    width: 58px;
+    height: 58px;
+  }
+
+  .tip {
+    display: none;
+  }
+
+  .packRow {
+    padding: 6px 10px 6px 8px;
+  }
+}

@@ -91,3 +91,61 @@
   font-weight: 700;
   letter-spacing: 0.01em;
 }
+
+/*
+ * Horizontal: la app deja de ser una columna estrecha y pasa a aprovechar el
+ * ancho real. Se usa el ancho y la relación de aspecto del viewport, no la
+ * orientación declarada, para que también funcione con barras del navegador,
+ * ventanas redimensionadas y pantallas plegables.
+ */
+@media (min-width: 720px) and (min-aspect-ratio: 1/1) {
+  .shell {
+    max-width: 1120px;
+    padding:
+      calc(16px + var(--safe-top))
+      calc(28px + var(--safe-right))
+      calc(12px + var(--safe-bottom))
+      calc(28px + var(--safe-left));
+  }
+
+  .cloudOne {
+    top: calc(30px + var(--safe-top));
+  }
+
+  .cloudTwo {
+    top: calc(52% + var(--safe-top));
+    right: 8px;
+  }
+
+  .sparkleTwo {
+    top: auto;
+    bottom: 22%;
+  }
+
+  .sparkleThree {
+    top: 34%;
+  }
+
+  .footer {
+    margin-top: 10px;
+    font-size: 0.68rem;
+  }
+}
+
+@media (min-width: 1280px) and (min-aspect-ratio: 1/1) {
+  .shell {
+    max-width: 1200px;
+  }
+}
+
+/* Móviles en horizontal: el alto es el recurso escaso. */
+@media (max-height: 540px) and (min-aspect-ratio: 1/1) {
+  .shell {
+    padding-top: calc(8px + var(--safe-top));
+    padding-bottom: calc(6px + var(--safe-bottom));
+  }
+
+  .footer {
+    display: none;
+  }
+}

@@ -149,3 +149,79 @@
   --pack-ink: #b98516;
   --pack-shadow: #f0d98c;
 }
+
+/*
+ * Horizontal: los tres mundos pasan a una fila (o dos si no caben) para
+ * aprovechar el ancho sin estirar cada tarjeta en exceso.
+ */
+@media (min-width: 600px) and (min-aspect-ratio: 1/1) {
+  .screen {
+    gap: 12px;
+    min-height: 0;
+  }
+
+  .intro {
+    padding: 8px 14px;
+  }
+
+  .packs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+  }
+
+  .pack {
+    min-height: 96px;
+    grid-template-columns: 68px minmax(0, 1fr) 36px;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .badge {
+    width: 68px;
+    height: 64px;
+    font-size: 1.6rem;
+    border-radius: 20px;
+  }
+
+  .title {
+    font-size: 1.18rem;
+  }
+
+  .description {
+    font-size: 0.7rem;
+  }
+
+  .arrow {
+    width: 36px;
+    height: 36px;
+  }
+
+  .note {
+    margin-top: auto;
+    padding: 8px 12px;
+  }
+}
+
+@media (max-height: 430px) and (min-aspect-ratio: 1/1) {
+  .screen {
+    gap: 8px;
+  }
+
+  .intro {
+    display: none;
+  }
+
+  .pack {
+    min-height: 84px;
+  }
+
+  .note {
+    padding: 6px 10px;
+    font-size: 0.72rem;
+  }
+
+  .noteMascot {
+    width: 44px;
+  }
+}

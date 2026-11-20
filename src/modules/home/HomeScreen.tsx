@@ -11,7 +11,7 @@ export function HomeScreen() {
   const { summary, status } = useProgress();
 
   return (
-    <Screen>
+    <Screen className={styles.screen}>
       <header className={styles.topbar}>
         <span className={styles.brand}>
           <SparkleIcon width="17" height="17" />
