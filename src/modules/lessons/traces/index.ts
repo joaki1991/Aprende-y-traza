@@ -1,4 +1,6 @@
 import type { CharacterTrace } from '../lesson.types';
+import { DIGIT_TRACES } from './digits';
+import { LOWERCASE_TRACES } from './lowercase';
 import { UPPERCASE_TRACES } from './uppercase';
 
 /**
@@ -10,6 +12,8 @@ import { UPPERCASE_TRACES } from './uppercase';
  */
 const TRACES: Record<string, CharacterTrace> = {
   ...UPPERCASE_TRACES,
+  ...LOWERCASE_TRACES,
+  ...DIGIT_TRACES,
 };
 
 export function getCharacterTrace(characterId: string): CharacterTrace | undefined {

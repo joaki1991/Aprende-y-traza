@@ -7,7 +7,7 @@ Guía para agentes de OpenCode y para cualquier persona que contribuya a **Apren
 - App educativa kawaii para una niña de ~4 años: trazar mayúsculas, minúsculas y números.
 - Interfaz en **español**; identificadores de código en **inglés**.
 - Prioridad absoluta: **móvil Android**, con diseño completo para vertical y horizontal, botones grandes, lectura mínima y uso con dedos pequeños.
-- Estado actual: **Sprint 1.5 cerrado**. El motor de trazado está implementado, la ficha de la A mayúscula es la única completa y toda la interfaz funciona en vertical y horizontal. No implementes el resto de fichas ni funcionalidades de sprints futuros sin que se pida explícitamente.
+- Estado actual: **Sprint 2 completado**. El motor de trazado está implementado y las 64 fichas (27 mayúsculas, 27 minúsculas y 10 números) están registradas y son trazables. Toda la interfaz funciona en vertical y horizontal. No implementes niveles progresivos, estrellas definitivas, sonido ni funcionalidades de sprints futuros sin que se pida explícitamente.
 
 ## 2. Reglas irrenunciables
 
@@ -61,8 +61,8 @@ Reglas:
 - Cada carácter necesita `id` estable, `glyph`, `spokenName`, `exampleWord` y `order`.
 - Los paquetes se identifican por `packId` (`mayusculas`, `minusculas`, `numeros`).
 - Los trazos SVG se describen con `TraceStroke`; no los incrustes en componentes de pantalla.
-- Cada `TraceStroke` debe declarar `path`, `start`, `end`, `direction`, `order`, `label` e `instruction`; `tolerance` es opcional.
-- Solo la A mayúscula tiene `CharacterTrace` en el Sprint 1. Las fichas sin trazos deben mostrar un aviso amable, nunca romperse.
+- Cada `TraceStroke` debe declarar `path`, `start`, `end`, `direction`, `order`, `label` e `instruction`; `tolerance` y `kind` son opcionales.
+- Las 64 fichas del catálogo tienen `CharacterTrace` registrado. Si algún día se declara un carácter sin trazos, la app debe mostrar un aviso amable, nunca romperse.
 - Para añadir un alfabeto, crea un paquete nuevo con su `scriptId`; no dupliques la estructura de pantallas.
 - Añade o actualiza pruebas de contenido al cambiar el catálogo (longitud, ids únicos, Ñ, palabras de ejemplo) y pruebas de integridad de los nuevos trazos.
 
@@ -91,8 +91,8 @@ La pizarra libre (`src/modules/tracing/DoodleCanvas.tsx`) y el ejercicio educati
 
 El motor educativo vive en `src/modules/tracing/`:
 
-- `traceGeometry.ts`: muestreo de paths SVG `M/L/H/V/C/S/Q/T/Z` y conversión de píxeles al `viewBox`.
-- `traceValidation.ts`: métricas y umbrales; no importa React ni DOM.
+- `traceGeometry.ts`: muestreo de paths SVG `M/L/H/V/C/S/Q/T/A/Z` (arcos con conversión endpoint → centro) y conversión de píxeles al `viewBox`.
+- `traceValidation.ts`: métricas y umbrales; no importa React ni DOM. La dirección se mide por avance neto (con desenvuelto en bucles cerrados), no por un contador de pasos con umbral fijo.
 - `traceSession.ts`: orden de trazos, intentos y precisión.
 - `TraceGuide.tsx`, `TraceCanvas.tsx` y `TraceScreen.tsx`: presentación y persistencia.
 
@@ -101,8 +101,9 @@ Reglas para ampliar el motor:
 - La validación debe seguir siendo geometría pura y probarse sin DOM.
 - El orden de los trazos lo impone la sesión; un intento rechazado no avanza.
 - Las tolerancias se expresan como fracción del lado menor del `viewBox`, no en píxeles.
+- Los puntos de i/j usan `kind: 'dot'`: se validan como toque y la guía los dibuja sin flecha.
+- Cada trazo debe ser un único subcamino (`M`).
 - Cualquier letra nueva debe conservar la proporción del tablero (5:7 con `0 0 100 140`).
-- No expandas el catálogo a las 64 fichas desde una tarea del Sprint 1; hazlo en el sprint correspondiente.
 
 ## 8. Persistencia
 

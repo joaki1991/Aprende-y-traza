@@ -48,6 +48,14 @@ export type StrokeDirection =
   | 'curve';
 
 /**
+ * Tipo de trazo:
+ * - `stroke`: recorrido normal (línea, curva o arco).
+ * - `dot`: toque puntual, como el punto de la i o la j. Se valida con un
+ *   umbral de distancia y no con cobertura de recorrido.
+ */
+export type TraceStrokeKind = 'stroke' | 'dot';
+
+/**
  * Recorrido SVG de un trazo.
  * Las coordenadas se expresan en el sistema del `viewBox` del carácter.
  * El motor de trazado consume este modelo sin conocer React ni Canvas.
@@ -55,7 +63,7 @@ export type StrokeDirection =
 export interface TraceStroke {
   id: string;
   order: number;
-  /** Atributo `d` de un <path> SVG. Admite M/L/H/V/C/S/Q/T/Z. */
+  /** Atributo `d` de un <path> SVG. Admite M/L/H/V/C/S/Q/T/A/Z. */
   path: string;
   /** Pista corta para el adulto o el audio futuro. */
   label: string;
@@ -69,6 +77,8 @@ export interface TraceStroke {
    * Si se omite, el motor usa `DEFAULT_TOLERANCE_RATIO`.
    */
   tolerance?: number;
+  /** Por defecto `stroke`. Los puntos de i/j usan `dot`. */
+  kind?: TraceStrokeKind;
 }
 
 export interface CharacterTrace {

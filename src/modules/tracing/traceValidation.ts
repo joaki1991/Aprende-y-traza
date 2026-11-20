@@ -116,6 +116,76 @@ function resolveTolerance(stroke: TraceStroke, options: StrokeValidationOptions,
   return Math.max(1, ratio * viewBoxSize);
 }
 
+/** Factores propios de un punto (i/j): no hay recorrido que cubrir. */
+const DOT_START_FACTOR = 1.5;
+const DOT_MAX_FACTOR = 1.6;
+const DOT_SCRIBBLE_FACTOR = 2.4;
+
+function evaluateDot(
+  drawnPoints: readonly TracePoint[],
+  stroke: TraceStroke,
+  tolerance: number,
+  drawnLength: number,
+): StrokeEvaluation {
+  const center = stroke.start;
+  const first = drawnPoints[0];
+  const last = drawnPoints.at(-1);
+
+  if (!first || !last) {
+    return {
+      accepted: false,
+      issues: ['too-short'],
+      score: 0,
+      metrics: {
+        coverage: 0,
+        accuracy: 0,
+        direction: 0,
+        startDistance: Number.POSITIVE_INFINITY,
+        endDistance: Number.POSITIVE_INFINITY,
+        startProgress: 0,
+        endProgress: 0,
+        lengthRatio: 0,
+      },
+    };
+  }
+
+  const startDistance = Math.hypot(first.x - center.x, first.y - center.y);
+  const endDistance = Math.hypot(last.x - center.x, last.y - center.y);
+  let maxDistance = 0;
+  for (const point of drawnPoints) {
+    maxDistance = Math.max(maxDistance, Math.hypot(point.x - center.x, point.y - center.y));
+  }
+
+  const issues: TraceIssue[] = [];
+  if (startDistance > tolerance * DOT_START_FACTOR) {
+    issues.push('start-too-far');
+  }
+  if (maxDistance > tolerance * DOT_MAX_FACTOR) {
+    issues.push('off-path');
+  }
+  if (drawnLength > tolerance * DOT_SCRIBBLE_FACTOR) {
+    issues.push('scribble');
+  }
+
+  const closeness = clamp(1 - maxDistance / Math.max(1, tolerance * DOT_MAX_FACTOR), 0, 1);
+
+  return {
+    accepted: issues.length === 0,
+    issues,
+    score: round(closeness),
+    metrics: {
+      coverage: round(closeness),
+      accuracy: round(closeness),
+      direction: issues.includes('scribble') ? 0 : 1,
+      startDistance: round(startDistance),
+      endDistance: round(endDistance),
+      startProgress: 0,
+      endProgress: 1,
+      lengthRatio: 0,
+    },
+  };
+}
+
 function evaluateAgainst(
   drawnPoints: readonly TracePoint[],
   stroke: TraceStroke,
@@ -130,6 +200,11 @@ function evaluateAgainst(
   const drawn = polylineFromPoints(drawnPoints);
   const first = drawnPoints[0];
   const last = drawnPoints.at(-1);
+
+  if (stroke.kind === 'dot') {
+    return evaluateDot(drawnPoints, stroke, tolerance, drawn.length);
+  }
+
   const targetStart = target.points[0] ?? stroke.start;
   const targetEnd = target.points.at(-1) ?? stroke.end;
 
@@ -174,6 +249,18 @@ function evaluateAgainst(
   const accuracy = onPath / drawnPoints.length;
 
   // Dirección: el progreso sobre el recorrido debe avanzar, no retroceder.
+  //
+  // Se suman los avances y los retrocesos en lugar de contar puntos: así la
+  // métrica no depende de cuántas muestras tenga el trazo (un recorrido denso
+  // avanza menos de 0.01 por punto) ni del tamaño del tablero.
+  //
+  // En los bucles cerrados (O, 0, 8…) el último punto vuelve a proyectarse
+  // sobre el inicio del path. Ese salto de 0.995 a 0 se interpreta como la
+  // continuación del mismo sentido, no como un retroceso: si se dibuja al
+  // revés, el salto se desenvuelve en negativo y la métrica lo detecta.
+  const closedLoop =
+    Math.hypot(targetStart.x - targetEnd.x, targetStart.y - targetEnd.y) <= 0.5;
+
   let forward = 0;
   let backward = 0;
   let previousProgress: number | null = null;
@@ -187,11 +274,18 @@ function evaluateAgainst(
     endProgress = Math.max(endProgress, progress);
 
     if (previousProgress !== null) {
-      const delta = progress - previousProgress;
-      if (delta > 0.01) {
-        forward += 1;
-      } else if (delta < -0.01) {
-        backward += 1;
+      let delta = progress - previousProgress;
+      if (closedLoop) {
+        if (delta < -0.5) {
+          delta += 1;
+        } else if (delta > 0.5) {
+          delta -= 1;
+        }
+      }
+      if (delta > 0) {
+        forward += delta;
+      } else {
+        backward -= delta;
       }
     }
     previousProgress = progress;

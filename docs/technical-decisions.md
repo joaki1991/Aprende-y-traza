@@ -1,6 +1,6 @@
 # Registro de decisiones técnicas (ADR)
 
-Decisiones tomadas durante los sprints 0 y 1. Formato ligero: contexto → decisión → consecuencias. Una decisión nueva debe añadirse aquí, no solo al código.
+Decisiones tomadas durante los sprints 0, 1, 1.5 y 2. Formato ligero: contexto → decisión → consecuencias. Una decisión nueva debe añadirse aquí, no solo al código.
 
 ---
 
@@ -410,3 +410,56 @@ La puntuación es `0.45 × cobertura + 0.35 × precisión + 0.20 × dirección`.
 - La guía y la tinta quedan alineadas en cualquier orientación y tamaño, incluso si el contenedor redondea algún píxel.
 - La deformación máxima es inferior al 1 % y es idéntica para la guía y para el trazo, por lo que no afecta a la validación (que trabaja en coordenadas del `viewBox`).
 - Las pruebas de geometría y validación no cambian: el motor sigue siendo independiente del DOM.
+
+---
+
+## ADR-024 — Arcos SVG nativos para las figuras redondas
+
+**Fecha:** 2026-11-20 · **Estado:** aceptada
+
+**Contexto:** las mayúsculas y minúsculas cerradas (O, C, G, o, c, a, b, d, g, p, q) y los números 0 y 9 necesitan curvas suaves y verificables. Las aproximaciones con curvas cúbicas son posibles, pero obligan a ajustar puntos de control a mano y hacen más difícil razonar sobre el cierre del bucle.
+
+**Decisión:** ampliar `samplePath` con el comando `A/a` y su conversión de punto final a centro de la especificación SVG (radios corregidos, rotación, flags de arco grande y sentido). Los bucles completos se describen con dos arcos que terminan en los extremos superior e inferior, con radios que garantizan un centro único. Los arcos se muestrean como el resto de curvas y la tolerancia sigue siendo una fracción del lado menor del `viewBox`.
+
+**Consecuencias:**
+
+- Las figuras redondas se definen con pocos números y se leen como se dibujan.
+- El muestreo es correcto para arcos pequeños, grandes, con rotación y con radios imposibles (se corrigen como indica el estándar).
+- Un arco de radio cero se degrada a línea recta y un arco sin desplazamiento no se dibuja, sin romper la app.
+- Sigue habiendo una sola implementación de geometría; no se añade ninguna librería de dibujo.
+- Las curvas de 3, 5, 6 y 8 se mantienen con cúbicas porque su forma no es un arco simple.
+
+---
+
+## ADR-025 — Puntos independientes con `kind: 'dot'`
+
+**Fecha:** 2026-11-20 · **Estado:** aceptada
+
+**Contexto:** la i y la j incluyen un punto que no es un recorrido: la niña debe tocar, no arrastrar. Validarlo con las métricas de cobertura, dirección y progreso daría resultados absurdos y podría aceptar garabatos largos.
+
+**Decisión:** añadir `TraceStrokeKind = 'stroke' | 'dot'` y el campo opcional `kind` a `TraceStroke`. La guía dibuja los puntos como círculo sin flecha y la validación usa una rama propia (`evaluateDot`) con tres factores sobre la tolerancia del trazo: inicio × 1,5, distancia máxima × 1,6 y longitud máxima × 2,4. No se tocan los umbrales globales de los demás trazos.
+
+**Consecuencias:**
+
+- Un toque en el punto se acepta; un toque lejos o un arrastre largo se rechazan con mensajes amables.
+- El punto conserva su posición y su orden dentro de la ficha.
+- Los trazos normales mantienen exactamente la validación del Sprint 1.
+- El modelo sigue siendo datos puros y las pruebas no necesitan DOM.
+
+---
+
+## ADR-026 — Dirección medida por avance neto, con bucles cerrados
+
+**Fecha:** 2026-11-20 · **Estado:** aceptada
+
+**Contexto:** la métrica de dirección contaba pasos con un umbral fijo de 0,01 de progreso. Con los 64 trazos aparecieron dos fallos: en un recorrido denso cada paso avanza menos de 0,01 (la O correcta daba dirección 0), y en un bucle cerrado el último punto se proyecta sobre el inicio (salto 0,995 → 0) y se contaba como retroceso. El recorrido inverso de la O aprovechaba justo lo contrario y se aceptaba.
+
+**Decisión:** sumar los avances y los retrocesos en lugar de contarlos. En los trazos cuyo inicio y fin coinciden (distancia ≤ 0,5 unidades del `viewBox`), el progreso se desenvuelve: un salto menor que −0,5 se interpreta como continuación sumando 1. La dirección es `avance / (avance + retroceso)`.
+
+**Consecuencias:**
+
+- La métrica no depende del número de muestras ni del tamaño del tablero.
+- El recorrido correcto de la O, 0, 8 y las bolas de a/b/d/g/p/q se acepta con dirección 1.
+- El recorrido inverso se rechaza con `backwards` en todos los bucles.
+- No se debilitan la cobertura, la precisión ni los umbrales; solo se corrige el cálculo.
+- Los trazos abiertos siguen usando la misma fórmula sin desenvolverse.

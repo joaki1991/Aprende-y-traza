@@ -11,9 +11,9 @@ Leyenda: ✅ completado · 🚧 en curso · ⏳ pendiente
 | 0 | Arquitectura, base técnica, PWA y Android | ✅ |
 | 1 | Motor de trazado educativo y ficha de la A | ✅ |
 | 1.5 | Orientación vertical y horizontal en todas las pantallas | ✅ |
-| 2 | Sistema visual definitivo y 27 mayúsculas | ⏳ |
+| 2 | Catálogo completo: 27 mayúsculas, 27 minúsculas y 10 números | ✅ |
 | 3 | Flujo de lecciones y evaluación | ⏳ |
-| 4 | Minúsculas, números y escalado de contenidos | ⏳ |
+| 4 | Sistema visual definitivo y revisión pedagógica | ⏳ |
 | 5 | Progreso detallado y persistencia avanzada | ⏳ |
 | 6 | Recompensas y motivación | ⏳ |
 | 7 | Sonido, accesibilidad y refuerzo educativo | ⏳ |
@@ -94,27 +94,30 @@ Leyenda: ✅ completado · 🚧 en curso · ⏳ pendiente
 
 ---
 
-## Sprint 2 — Sistema visual definitivo y 27 mayúsculas ⏳
+## Sprint 2 — Catálogo completo de fichas ✅
 
-**Objetivo:** pulir la experiencia infantil y completar el catálogo de mayúsculas sobre el motor ya existente.
+**Objetivo:** implementar las 64 fichas educativas reutilizando el mismo motor de trazado, sin duplicar pantallas ni lógica.
 
-**Alcance:**
+**Entregables:**
 
-- Revisar jerarquía visual, tamaños táctiles y legibilidad en móviles de 360–430 px.
-- Estados vacíos, de carga y de error amables en todas las pantallas.
-- Navegación inferior o accesos rápidos adaptados a una niña que no lee.
-- Ajustar animaciones y respetar `prefers-reduced-motion`.
-- Revisar contraste, foco y etiquetas accesibles.
-- Pantalla de ajustes para adultos (sin datos personales): reset de progreso, información de privacidad y versión.
-- Definir los `CharacterTrace` de las 26 mayúsculas restantes, con inicio, fin, orden, instrucciones y tolerancias.
-- Ampliar el muestreador SVG si alguna letra necesita arcos.
-- Pruebas de integridad de todos los trazos (ids, orden, extremos, `viewBox`) y de regresión de navegación.
+- 27 mayúsculas en `traces/uppercase.ts`, conservando intacta la geometría de la A del Sprint 1.
+- 27 minúsculas en `traces/lowercase.ts`, con altura de x en `y=62`, ascendentes hasta `y=16` y descendentes hasta `y=136`.
+- 10 números en `traces/digits.ts`, cada uno con su orden de escritura propio.
+- Ñ mayúscula = cuerpo de N + virgulilla; ñ minúscula con virgulilla sobre la altura de x.
+- Soporte nativo de arcos `A` en el muestreador SVG, con conversión endpoint → centro de la especificación.
+- Tipo de trazo `dot` para los puntos de i y j, validados como toque puntual.
+- Métrica de dirección por avance neto, estable con trazos densos y bucles cerrados (O, 0, 8, bolas de a/b/d/g/p/q).
+- Catálogo completo registrado y visible en Aprender; ya no hay «¡Muy pronto!» en fichas del catálogo.
+- Pruebas de contenido, integridad de los 64 trazos, arcos, puntos, autotrazado, recorrido inverso, saltos de orden y garabatos.
+- Integración de minúscula, número y punto de i con persistencia en IndexedDB.
+- `docs/sprint-2.md`, ADR de arcos, puntos y dirección, arquitectura y README actualizados.
+- 113 pruebas (14 archivos), lint, typecheck y build verdes.
 
-**Criterio de aceptación:** las 27 mayúsculas son trazables con evaluación coherente; recorrido completo sin callejones sin salida; ningún target táctil principal por debajo de 56 px; sin desbordamientos a 360 px; revisión con la niña documentada.
+**Criterio de aceptación:** cualquier letra mayúscula, minúscula o número se puede seleccionar y completar con el mismo motor; los trazos invertidos, incompletos y fuera de orden se rechazan; la A sigue funcionando; vertical y horizontal siguen operativos.
 
-**Riesgos:** definiciones SVG imprecisas; tolerancias demasiado estrictas en letras con curvas; sobrecargar la interfaz con texto.
+**Fuera de alcance (para los siguientes sprints):** niveles progresivos, estrellas definitivas, sonidos, panel parental, backend y publicación.
 
-**Dependencias:** Sprint 1.
+**Evidencia:** [`docs/sprint-2.md`](docs/sprint-2.md).
 
 ---
 
@@ -138,20 +141,26 @@ Leyenda: ✅ completado · 🚧 en curso · ⏳ pendiente
 
 ---
 
-## Sprint 4 — Minúsculas, números y escalado de contenidos ⏳
+## Sprint 4 — Sistema visual definitivo y revisión pedagógica ⏳
 
-**Objetivo:** ampliar el catálogo sin duplicar pantallas ni lógica.
+**Objetivo:** pulir la experiencia infantil una vez que todo el catálogo ya es trazable y revisar la calidad pedagógica de las 64 fichas.
 
 **Alcance:**
 
-- Trazos SVG de 27 minúsculas y 10 dígitos.
-- Ajustes de altura y línea base por tipo de carácter.
+- Revisar jerarquía visual, tamaños táctiles y legibilidad en móviles de 360–430 px.
+- Estados vacíos, de carga y de error amables en todas las pantallas.
+- Navegación inferior o accesos rápidos adaptados a una niña que no lee.
+- Ajustar animaciones y respetar `prefers-reduced-motion`.
+- Revisar contraste, foco y etiquetas accesibles.
+- Pantalla de ajustes para adultos (sin datos personales): reset de progreso, información de privacidad y versión.
+- Revisión con la niña de una muestra de mayúsculas, minúsculas y números; ajustar geometrías o tolerancias por trazo si hace falta.
+- Revisión pedagógica de las palabras de ejemplo y del orden de escritura.
 - Posibilidad de añadir un alfabeto nuevo solo con datos (paquete + trazos).
-- Selector de mundos con progreso por paquete.
-- Pruebas de integridad de todos los trazos (ids, orden, puntos de inicio/fin, viewBox).
-- Revisión pedagógica de palabras de ejemplo.
+- Pruebas de regresión de navegación y accesibilidad.
 
-**Criterio de aceptación:** los tres paquetes funcionan con el mismo motor y flujo; añadir un paquete de prueba no requiere tocar componentes de pantalla.
+**Criterio de aceptación:** recorrido completo sin callejones sin salida; ningún target táctil principal por debajo de 56 px; sin desbordamientos a 360 px; revisión con la niña documentada.
+
+**Riesgos:** tolerancias demasiado estrictas en letras con curvas; sobrecargar la interfaz con texto.
 
 **Dependencias:** Sprints 2 y 3.
 

@@ -37,11 +37,11 @@ interface Feedback {
 const ADVANCE_DELAY_MS = 800;
 const RETRY_DELAY_MS = 900;
 
-function firstInstruction(trace: CharacterTrace, glyph: string): string {
+function firstInstruction(trace: CharacterTrace, glyph: string, article: 'el' | 'la'): string {
   const stroke = trace.strokes[0];
   return stroke
-    ? `Vamos a trazar la ${glyph}. ${stroke.instruction}`
-    : `Vamos a trazar la ${glyph}.`;
+    ? `Vamos a trazar ${article} ${glyph}. ${stroke.instruction}`
+    : `Vamos a trazar ${article} ${glyph}.`;
 }
 
 function nextInstruction(trace: CharacterTrace, index: number): string {
@@ -81,13 +81,14 @@ export function TraceScreen({ packId, characterId }: TraceScreenProps) {
   const character = getLessonCharacter(packId, characterId);
   const trace = getCharacterTrace(characterId);
   const { recordPractice } = useProgress();
+  const article: 'el' | 'la' = pack?.scriptId === 'digits' ? 'el' : 'la';
 
   const [session, setSession] = useState<TraceSessionState>(() =>
     trace ? createTraceSession(trace) : createTraceSessionForEmpty(),
   );
   const [feedback, setFeedback] = useState<Feedback>(() => ({
     kind: 'idle',
-    message: trace && character ? firstInstruction(trace, character.glyph) : '',
+    message: trace && character ? firstInstruction(trace, character.glyph, article) : '',
   }));
   const [locked, setLocked] = useState(false);
   const [resetKey, setResetKey] = useState(0);
@@ -121,7 +122,11 @@ export function TraceScreen({ packId, characterId }: TraceScreenProps) {
           <MochiCat className={styles.preparingMochi} />
           <div>
             <h2>¡Muy pronto!</h2>
-            <p>La ficha de la {character.glyph} todavía se está preparando.</p>
+            <p>
+              {article === 'el'
+                ? `La ficha del ${character.glyph} todavía se está preparando.`
+                : `La ficha de la ${character.glyph} todavía se está preparando.`}
+            </p>
           </div>
         </aside>
         <BigActionLink href={lessonHref(pack.id)} accent="sky">
@@ -192,7 +197,10 @@ export function TraceScreen({ packId, characterId }: TraceScreenProps) {
       setLocked(true);
       setFeedback({
         kind: 'complete',
-        message: `¡Bravo! La ${character.glyph} está preciosa.`,
+        message:
+          article === 'el'
+            ? `¡Bravo! El ${character.glyph} está genial.`
+            : `¡Bravo! La ${character.glyph} está preciosa.`,
       });
       if (!completionRecordedRef.current) {
         completionRecordedRef.current = true;
@@ -230,7 +238,7 @@ export function TraceScreen({ packId, characterId }: TraceScreenProps) {
     completionRecordedRef.current = false;
     partialRecordedRef.current = false;
     setSession(resetTraceSession(trace));
-    setFeedback({ kind: 'idle', message: firstInstruction(trace, character.glyph) });
+    setFeedback({ kind: 'idle', message: firstInstruction(trace, character.glyph, article) });
     setLocked(false);
     setResetKey((key) => key + 1);
     setPulseKey((key) => key + 1);
@@ -239,7 +247,7 @@ export function TraceScreen({ packId, characterId }: TraceScreenProps) {
   return (
     <Screen className={styles.screen}>
       <ScreenHeader
-        title={`La ${character.glyph}`}
+        title={`${article === 'el' ? 'El' : 'La'} ${character.glyph}`}
         backHref={lessonHref(pack.id)}
         backLabel="Volver a las letras"
       />
@@ -308,7 +316,11 @@ export function TraceScreen({ packId, characterId }: TraceScreenProps) {
               </span>
               <MochiCat className={styles.celebrationMochi} />
               <h2>¡Bravo!</h2>
-              <p>La {character.glyph} está preciosa.</p>
+              <p>
+                {article === 'el'
+                  ? `El ${character.glyph} está genial.`
+                  : `La ${character.glyph} está preciosa.`}
+              </p>
               <button type="button" className={styles.again} onClick={handleRepeat}>
                 Otra vez
               </button>

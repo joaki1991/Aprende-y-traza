@@ -1,6 +1,6 @@
 # Arquitectura — Aprende y Traza
 
-Documento vivo. Describe cómo está organizado el proyecto tras el Sprint 1.5 y qué contratos deben respetarse al añadir el resto de fichas y los sprints siguientes.
+Documento vivo. Describe cómo está organizado el proyecto tras el Sprint 2 y qué contratos deben respetarse al añadir más fichas y en los sprints siguientes.
 
 ## 1. Visión general
 
@@ -107,16 +107,16 @@ Portada con saludo, mascota Mochi y cuatro accesos grandes: Aprender, Pizarra, E
 
 ### Learning
 
-Lista los paquetes de `LESSON_PACKS` y enlaza a la vista previa. No contiene datos educativos propios. La vista previa marca con un ▶ las fichas que ya tienen trazos y ofrece un acceso directo a la primera disponible.
+Lista los paquetes de `LESSON_PACKS` y enlaza a la vista previa. No contiene datos educativos propios. La vista previa marca con un ▶ las fichas que ya tienen trazos y ofrece un acceso directo a la primera disponible; con el catálogo completo indica «¡Todas las fichas están listas!».
 
 ### Lessons
 
-- `lesson.types.ts`: contratos de paquete, carácter, punto, dirección y trazo.
+- `lesson.types.ts`: contratos de paquete, carácter, punto, dirección y trazo (`kind: 'stroke' | 'dot'`).
 - `content.ts`: única fuente de verdad del catálogo.
 - `traces/`: definiciones de recorridos por paquete. `traces/index.ts` expone `getCharacterTrace` y `hasCharacterTrace`.
 - Los datos son puros y serializables; no conocen React ni Canvas.
 - `TraceStroke` describe un `<path>` SVG con inicio, fin, dirección, orden, instrucción y tolerancia; `CharacterTrace` agrupa los trazos y el `viewBox` (`0 0 100 140` por convención).
-- En el Sprint 1 solo está registrada la A mayúscula (`upper-a`). Las demás fichas muestran un aviso amable.
+- Las 64 fichas están registradas: `uppercase.ts` (27), `lowercase.ts` (27) y `digits.ts` (10). Cada trazo es un único subcamino (`M`) y sus extremos coinciden con `start`/`end`.
 
 Identificadores estables:
 
@@ -139,10 +139,10 @@ El módulo contiene dos motores independientes que comparten Canvas y Pointer Ev
 
 **Motor educativo**
 
-- `traceGeometry.ts`: lectura del `viewBox`, conversión píxeles → `viewBox`, muestreo de `M/L/H/V/C/S/Q/T/Z`, distancias punto-polilínea, progreso y punto/ángulo a una proporción.
-- `traceValidation.ts`: métricas de inicio, cobertura, precisión, dirección, progreso, final, longitud y detección de orden incorrecto. Geometría pura, sin React.
+- `traceGeometry.ts`: lectura del `viewBox`, conversión píxeles → `viewBox`, muestreo de `M/L/H/V/C/S/Q/T/A/Z`, distancias punto-polilínea, progreso y punto/ángulo a una proporción. Los arcos se convierten a centro y radios con el algoritmo de la especificación SVG.
+- `traceValidation.ts`: métricas de inicio, cobertura, precisión, dirección, progreso, final, longitud y detección de orden incorrecto. Geometría pura, sin React. Los trazos `dot` usan una validación de toque propia.
 - `traceSession.ts`: máquina de estados que impone el orden, cuenta intentos y calcula la precisión media.
-- `TraceGuide.tsx`: guía SVG con puntos, trazo actual, completados, inicio pulsante y flecha.
+- `TraceGuide.tsx`: guía SVG con puntos, trazo actual, completados, inicio pulsante, flecha y marcas de punto para i/j.
 - `TraceCanvas.tsx`: tinta transparente; guarda puntos en coordenadas del `viewBox`, pinta solo el segmento nuevo y limpia al cancelar o repetir.
 - `TraceScreen.tsx`: instrucciones de Mochi, pasos, feedback, celebración, repetición, vuelta y persistencia.
 
@@ -246,7 +246,7 @@ Se guarda un único registro `{ id: 'default', data }` en el store `progress`.
 | Canvas no disponible | Texto alternativo dentro del `<canvas>` |
 | Puntero cancelado | Se descarta el trazo activo y se libera la captura |
 | Trazo rechazado | Mensaje amable con la pista concreta y reinicio automático |
-| Ficha sin trazos | Pantalla «¡Muy pronto!» con vuelta al listado |
+| Ficha sin trazos | Pantalla «¡Muy pronto!» con vuelta al listado (solo si se declara un carácter sin `CharacterTrace`) |
 | PWA no registrable | Aviso en consola; la app sigue funcionando |
 
 ## 8. Pruebas
@@ -254,17 +254,18 @@ Se guarda un único registro `{ id: 'default', data }` en el store `progress`.
 - Vitest 4 + jsdom + Testing Library.
 - `src/test/setup.ts`: `jest-dom`, `fake-indexeddb/auto`, limpieza tras cada test, `ResizeObserver` controlable, `scrollTo` y un contexto Canvas 2D mínimo para jsdom.
 - `src/test/resizeObserver.ts`: doble que conserva los observadores activos y permite dispararlos con `triggerResizeObservers()` para simular giros y redimensionados.
-- 12 archivos, 81 pruebas en Sprint 1.5:
+- 14 archivos, 113 pruebas en Sprint 2:
   - Router y rutas (incluida la ficha de carácter).
   - Contenidos (64 caracteres, ids únicos, Ñ, palabras).
+  - Catálogo de los 64 trazos: cobertura exacta, ids únicos, orden, extremos, límites del tablero, arcos, puntos de i/j, A intacta, Ñ, autotrazado, recorrido inverso, saltos de orden y garabatos.
   - Resumen de progreso y casos corruptos.
   - Repositorio IndexedDB (guardado, suma, reset, práctica, datos inválidos).
   - Utilidades de dibujo (normalización, recorte, puntos, grosor, paleta).
-  - Geometría del trazado (muestreo SVG, distancias, conversión de coordenadas).
-  - Validación (correcto, invertido, extremos, incompleto, desviación, garabato, orden, tamaños horizontal/tablet y tolerancias estables).
+  - Geometría del trazado (muestreo SVG, arcos grandes/pequeños, bucles cerrados, distancias, conversión de coordenadas).
+  - Validación (correcto, invertido, extremos, incompleto, desviación, garabato, orden, tamaños horizontal/tablet, tolerancias estables y puntos de i/j).
   - Sesión ordenada (avance, saltos, reintento, reset y precisión).
   - Recompensas (hitos, desbloqueo).
-  - Integración de la app y del flujo A → ejercicio → celebración → IndexedDB, incluida la finalización tras girar a horizontal.
+  - Integración de la app y del flujo A → ejercicio → celebración → IndexedDB, incluida la finalización tras girar a horizontal, una minúscula, un número y el punto de la i.
   - Pantallas principales en viewports horizontales.
   - Guarda de configuración de orientación (manifest Android, manifest PWA y viewport).
 
@@ -276,7 +277,7 @@ Criterio: la lógica nueva debe llegar con pruebas; los errores y datos corrupto
 - Puntos descartados si están a menos de 1,4 px (pizarra) o 1,2 px (trazado) para no acumular memoria.
 - Estado de dibujo en refs para evitar renders por cada movimiento.
 - SVG e iconos locales, sin imágenes pesadas.
-- Bundle de producción ≈ 298 kB JS (≈ 94 kB gzip) y ≈ 35 kB CSS en Sprint 1.
+- Bundle de producción ≈ 325 kB JS (≈ 100 kB gzip) y ≈ 43 kB CSS (≈ 9 kB gzip) en Sprint 2.
 - Animaciones con `transform`/`opacity`; se desactivan con `prefers-reduced-motion`.
 
 El Sprint 9 (o el Sprint 2 si se amplía el catálogo) medirá memoria y fps en dispositivos reales; si hace falta, se limitará el número de puntos o se usarán paths simplificados.
@@ -296,8 +297,9 @@ El Sprint 9 (o el Sprint 2 si se amplía el catálogo) medirá memoria y fps en 
 1. Define el `CharacterTrace` en `traces/<paquete>.ts` con un `viewBox` coherente.
 2. Ordena los trazos y haz que `start`/`end` coincidan con los extremos del `path`.
 3. Escribe una `instruction` corta, sin tecnicismos, y ajusta `tolerance` si la letra lo necesita.
-4. Registra el `characterId` en `traces/index.ts`.
-5. Añade pruebas de geometría/validación y comprueba la ficha en móvil.
+4. Usa `kind: 'dot'` solo para toques puntuales (i/j) y un único subcamino `M` por trazo.
+5. Registra el `characterId` en `traces/index.ts`.
+6. Añade pruebas de geometría/validación y comprueba la ficha en móvil.
 
 ### Añadir una pantalla
 
@@ -325,5 +327,6 @@ El Sprint 9 (o el Sprint 2 si se amplía el catálogo) medirá memoria y fps en 
 - [`sprint-0.md`](sprint-0.md): evidencia de validación del Sprint 0.
 - [`sprint-1.md`](sprint-1.md): motor de trazado, algoritmo y validación del Sprint 1.
 - [`sprint-1.5.md`](sprint-1.5.md): orientación vertical/horizontal, distribuciones y verificación.
+- [`sprint-2.md`](sprint-2.md): catálogo completo, arcos, puntos y verificación.
 - [`../ROADMAP.md`](../ROADMAP.md): secuencia de sprints.
 - [`../AGENTS.md`](../AGENTS.md): reglas de contribución.

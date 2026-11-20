@@ -94,10 +94,10 @@ async function deleteTestDatabase(): Promise<void> {
   });
 }
 
-function loadTrace(): CharacterTrace {
-  const trace = getCharacterTrace('upper-a');
+function loadTrace(traceId = 'upper-a'): CharacterTrace {
+  const trace = getCharacterTrace(traceId);
   if (!trace) {
-    throw new Error('La A mayúscula debería tener trazos registrados.');
+    throw new Error(`La ficha ${traceId} debería tener trazos registrados.`);
   }
   return trace;
 }
@@ -117,10 +117,11 @@ function drawStroke(
   canvas: HTMLCanvasElement,
   strokeIndex: number,
   rect: DOMRect = canvasRect,
+  traceId = 'upper-a',
 ): void {
-  const stroke = loadTrace().strokes[strokeIndex];
+  const stroke = loadTrace(traceId).strokes[strokeIndex];
   if (!stroke) {
-    throw new Error(`No existe el trazo ${strokeIndex}.`);
+    throw new Error(`No existe el trazo ${strokeIndex} de ${traceId}.`);
   }
 
   const points = samplePath(stroke.path, 4).points;
@@ -152,6 +153,29 @@ function drawStroke(
     isPrimary: true,
     ...toClient(last, rect),
   });
+}
+
+/** Toca un punto independiente (i/j) sin arrastrar. */
+function drawDot(
+  canvas: HTMLCanvasElement,
+  strokeIndex: number,
+  traceId: string,
+  rect: DOMRect = canvasRect,
+): void {
+  const stroke = loadTrace(traceId).strokes[strokeIndex];
+  if (!stroke) {
+    throw new Error(`No existe el punto ${strokeIndex} de ${traceId}.`);
+  }
+
+  const touch = {
+    pointerId: 1,
+    pointerType: 'touch',
+    isPrimary: true,
+    ...toClient(stroke.start, rect),
+  };
+
+  fireEvent.pointerDown(canvas, touch);
+  fireEvent.pointerUp(canvas, touch);
 }
 
 function renderAt(hash: string) {
@@ -191,24 +215,24 @@ async function rotateCanvasTo(rect: DOMRect): Promise<void> {
   });
 }
 
+beforeEach(async () => {
+  await deleteTestDatabase();
+  setCanvasRect(PORTRAIT_RECT);
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
+    () => contextStub as unknown as CanvasRenderingContext2D,
+  );
+  vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockImplementation(
+    () => canvasRect,
+  );
+  contextStub.clearRect.mockClear();
+  contextStub.stroke.mockClear();
+});
+
+afterEach(async () => {
+  await deleteTestDatabase();
+});
+
 describe('flujo de trazado de la A', () => {
-  beforeEach(async () => {
-    await deleteTestDatabase();
-    setCanvasRect(PORTRAIT_RECT);
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
-      () => contextStub as unknown as CanvasRenderingContext2D,
-    );
-    vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect').mockImplementation(
-      () => canvasRect,
-    );
-    contextStub.clearRect.mockClear();
-    contextStub.stroke.mockClear();
-  });
-
-  afterEach(async () => {
-    await deleteTestDatabase();
-  });
-
   it('permite entrar desde Mayúsculas y completar los tres trazos', async () => {
     renderAt('#/aprender/mayusculas');
 
@@ -333,6 +357,87 @@ describe('flujo de trazado de la A', () => {
       const character = progress.characters['upper-a'];
       expect(character?.completions).toBe(0);
       expect(character?.lastResult).toBe('incomplete');
+    });
+  });
+});
+
+describe('flujo de trazado de minúsculas y números', () => {
+  it('completa la minúscula a con su bola y su línea', async () => {
+    renderAt('#/aprender/minusculas');
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Minúsculas' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /trazar a, minúscula: abeja/i })).toHaveAttribute(
+      'href',
+      '#/aprender/minusculas/lower-a',
+    );
+
+    goTo('#/aprender/minusculas/lower-a');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'La a' })).toBeInTheDocument();
+    expect(screen.getByText(/haz una bolita/i)).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Trazo 1 de 2' })).toBeInTheDocument();
+
+    const canvas = screen.getByLabelText(/zona para trazar la letra a/i) as HTMLCanvasElement;
+
+    drawStroke(canvas, 0, canvasRect, 'lower-a');
+    expect(await screen.findByText(/baja una línea recta a la derecha/i)).toBeInTheDocument();
+    await waitForNextStroke();
+
+    drawStroke(canvas, 1, canvasRect, 'lower-a');
+
+    expect(await screen.findByRole('heading', { name: '¡Bravo!' })).toBeInTheDocument();
+    expect(screen.getAllByText(/la a está preciosa/i).length).toBeGreaterThan(0);
+
+    await waitFor(async () => {
+      const progress = await loadProgress();
+      const character = progress.characters['lower-a'];
+      expect(character?.packId).toBe('minusculas');
+      expect(character?.attempts).toBe(1);
+      expect(character?.completions).toBe(1);
+      expect(character?.lastResult).toBe('completed');
+      expect(character?.bestAccuracy).toBeGreaterThan(0.5);
+    });
+  });
+
+  it('completa el número 0 con una sola vuelta cerrada', async () => {
+    renderAt('#/aprender/numeros/digit-0');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'El 0' })).toBeInTheDocument();
+    const canvas = screen.getByLabelText(/zona para trazar el número 0/i) as HTMLCanvasElement;
+
+    drawStroke(canvas, 0, canvasRect, 'digit-0');
+
+    expect(await screen.findByRole('heading', { name: '¡Bravo!' })).toBeInTheDocument();
+    expect(screen.getAllByText(/el 0 está genial/i).length).toBeGreaterThan(0);
+
+    await waitFor(async () => {
+      const progress = await loadProgress();
+      const character = progress.characters['digit-0'];
+      expect(character?.packId).toBe('numeros');
+      expect(character?.completions).toBe(1);
+      expect(character?.lastResult).toBe('completed');
+    });
+  });
+
+  it('completa la i con su línea y un toque en el punto', async () => {
+    renderAt('#/aprender/minusculas/lower-i');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'La i' })).toBeInTheDocument();
+    const canvas = screen.getByLabelText(/zona para trazar la letra i/i) as HTMLCanvasElement;
+
+    drawStroke(canvas, 0, canvasRect, 'lower-i');
+    expect(await screen.findByText(/pon un puntito arriba/i)).toBeInTheDocument();
+    await waitForNextStroke();
+
+    drawDot(canvas, 1, 'lower-i');
+
+    expect(await screen.findByRole('heading', { name: '¡Bravo!' })).toBeInTheDocument();
+
+    await waitFor(async () => {
+      const progress = await loadProgress();
+      const character = progress.characters['lower-i'];
+      expect(character?.completions).toBe(1);
+      expect(character?.lastResult).toBe('completed');
     });
   });
 });

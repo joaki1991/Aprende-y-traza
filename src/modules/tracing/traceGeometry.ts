@@ -100,9 +100,10 @@ export function toViewBoxPoint(
 /**
  * Muestrea un path SVG en una polilínea.
  *
- * Soporta los comandos habituales de las letras (M/L/H/V/C/S/Q/T/Z). Los arcos
- * (`A`) no se usan todavía; si aparecieran, se ignoran en lugar de romper la app.
- * Los trazos educativos deben tener un único subcamino.
+ * Soporta los comandos habituales de las letras (M/L/H/V/C/S/Q/T/A/Z). Los
+ * arcos se convierten a su centro y radios según la especificación SVG y se
+ * muestrean como el resto de curvas. Los trazos educativos deben tener un
+ * único subcamino.
  */
 export function samplePath(path: string, spacing = 1.5): Polyline {
   const points: TracePoint[] = [];
@@ -167,6 +168,100 @@ export function samplePath(path: string, spacing = 1.5): Polyline {
       addPoint({ x, y });
     }
     current = to;
+  };
+
+  /**
+   * Arco elíptico (`A`). Sigue la conversión de punto final a centro de la
+   * especificación SVG: corrige radios demasiado pequeños, resuelve el centro
+   * con los flags de arco grande y sentido, y muestrea el ángulo resultante.
+   */
+  const addArc = (
+    radiusX: number,
+    radiusY: number,
+    rotationDegrees: number,
+    largeArcFlag: number,
+    sweepFlag: number,
+    to: TracePoint,
+  ) => {
+    const from = current;
+    const largeArc = largeArcFlag !== 0;
+    const sweep = sweepFlag !== 0;
+    let rx = Math.abs(radiusX);
+    let ry = Math.abs(radiusY);
+
+    const samePoint = Math.abs(from.x - to.x) < 1e-6 && Math.abs(from.y - to.y) < 1e-6;
+    if (rx < 1e-6 || ry < 1e-6) {
+      // Con radio cero la especificación indica una línea recta.
+      addLine(to);
+      return;
+    }
+    if (samePoint) {
+      // Un arco sin desplazamiento no se dibuja.
+      return;
+    }
+
+    const phi = (rotationDegrees * Math.PI) / 180;
+    const cosPhi = Math.cos(phi);
+    const sinPhi = Math.sin(phi);
+    const dx = (from.x - to.x) / 2;
+    const dy = (from.y - to.y) / 2;
+    const x1p = cosPhi * dx + sinPhi * dy;
+    const y1p = -sinPhi * dx + cosPhi * dy;
+
+    const radiusScale = (x1p * x1p) / (rx * rx) + (y1p * y1p) / (ry * ry);
+    if (radiusScale > 1) {
+      const scale = Math.sqrt(radiusScale);
+      rx *= scale;
+      ry *= scale;
+    }
+
+    const rxSquared = rx * rx;
+    const rySquared = ry * ry;
+    const numerator =
+      rxSquared * rySquared - rxSquared * y1p * y1p - rySquared * x1p * x1p;
+    const denominator = rxSquared * y1p * y1p + rySquared * x1p * x1p;
+    const sign = largeArc === sweep ? -1 : 1;
+    const coefficient =
+      sign * Math.sqrt(Math.max(0, numerator / Math.max(1e-9, denominator)));
+    const centerXp = coefficient * ((rx * y1p) / ry);
+    const centerYp = coefficient * (-(ry * x1p) / rx);
+    const centerX = cosPhi * centerXp - sinPhi * centerYp + (from.x + to.x) / 2;
+    const centerY = sinPhi * centerXp + cosPhi * centerYp + (from.y + to.y) / 2;
+
+    const vectorAngle = (ux: number, uy: number, vx: number, vy: number): number => {
+      const dot = ux * vx + uy * vy;
+      const lengths = Math.hypot(ux, uy) * Math.hypot(vx, vy);
+      const cosine = lengths > 0 ? clamp(dot / lengths, -1, 1) : 1;
+      const angle = Math.acos(cosine);
+      return ux * vy - uy * vx < 0 ? -angle : angle;
+    };
+
+    const startVectorX = (x1p - centerXp) / rx;
+    const startVectorY = (y1p - centerYp) / ry;
+    const endVectorX = (-x1p - centerXp) / rx;
+    const endVectorY = (-y1p - centerYp) / ry;
+    const startAngle = vectorAngle(1, 0, startVectorX, startVectorY);
+    let sweepAngle = vectorAngle(startVectorX, startVectorY, endVectorX, endVectorY);
+    if (!sweep && sweepAngle > 0) {
+      sweepAngle -= Math.PI * 2;
+    } else if (sweep && sweepAngle < 0) {
+      sweepAngle += Math.PI * 2;
+    }
+
+    const arcLength = Math.abs(sweepAngle) * Math.max(rx, ry);
+    const steps = clamp(Math.ceil(arcLength / Math.max(0.5, spacing)), 8, 320);
+    for (let step = 1; step <= steps; step += 1) {
+      const angle = startAngle + sweepAngle * (step / steps);
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      addPoint({
+        x: centerX + rx * cos * cosPhi - ry * sin * sinPhi,
+        y: centerY + rx * cos * sinPhi + ry * sin * cosPhi,
+      });
+    }
+    current = to;
+    previousCubicControl = null;
+    previousQuadraticControl = null;
   };
 
   const readNumber = (): number | null => {
@@ -316,6 +411,29 @@ export function samplePath(path: string, spacing = 1.5): Polyline {
         addQuadratic(control, to);
         previousQuadraticControl = control;
         previousCubicControl = null;
+        break;
+      }
+      case 'A': {
+        const rx = readNumber();
+        const ry = readNumber();
+        const rotation = readNumber();
+        const largeArc = readNumber();
+        const sweep = readNumber();
+        const x = readNumber();
+        const y = readNumber();
+        if (
+          rx === null ||
+          ry === null ||
+          rotation === null ||
+          largeArc === null ||
+          sweep === null ||
+          x === null ||
+          y === null
+        ) {
+          break;
+        }
+        const to = relative ? { x: origin.x + x, y: origin.y + y } : { x, y };
+        addArc(rx, ry, rotation, largeArc, sweep, to);
         break;
       }
       case 'Z': {

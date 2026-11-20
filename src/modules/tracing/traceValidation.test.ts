@@ -181,3 +181,88 @@ describe('validación de trazos', () => {
     expect(result.metrics.accuracy).toBeLessThan(0.5);
   });
 });
+
+describe('puntos independientes de la i y la j', () => {
+  const lowerI = getCharacterTrace('lower-i');
+  const lowerJ = getCharacterTrace('lower-j');
+
+  if (!lowerI || !lowerJ) {
+    throw new Error('Las minúsculas i y j deberían tener trazos registrados.');
+  }
+
+  const iDot = lowerI.strokes[1];
+  const jDot = lowerJ.strokes[1];
+  const iStem = lowerI.strokes[0];
+
+  if (!iDot || !jDot || !iStem) {
+    throw new Error('La i y la j deberían tener línea y punto.');
+  }
+
+  it('acepta un toque justo en el punto de la i', () => {
+    const result = evaluateStroke([{ x: 50, y: 48 }], iDot, lowerI);
+
+    expect(result.accepted).toBe(true);
+    expect(result.issues).toEqual([]);
+    expect(result.metrics.direction).toBe(1);
+  });
+
+  it('acepta un toque pequeño y algo movedizo', () => {
+    const result = evaluateStroke(
+      [
+        { x: 51, y: 49 },
+        { x: 53, y: 50 },
+      ],
+      iDot,
+      lowerI,
+    );
+
+    expect(result.accepted, result.issues.join(', ')).toBe(true);
+  });
+
+  it('rechaza un toque lejos del punto', () => {
+    const result = evaluateStroke([{ x: 70, y: 48 }], iDot, lowerI);
+
+    expect(result.accepted).toBe(false);
+    expect(result.issues).toContain('start-too-far');
+    expect(result.issues).toContain('off-path');
+  });
+
+  it('rechaza un garabato largo sobre el punto', () => {
+    const scratch: TracePoint[] = [];
+    for (let index = 0; index <= 20; index += 1) {
+      scratch.push({ x: 50 + index * 1.6, y: 48 });
+    }
+
+    const result = evaluateStroke(scratch, iDot, lowerI);
+
+    expect(result.accepted).toBe(false);
+    expect(result.issues).toContain('scribble');
+  });
+
+  it('no confunde la línea de la i con su punto', () => {
+    const result = evaluateStroke(pointsAlong(iStem), iDot, lowerI);
+
+    expect(result.accepted).toBe(false);
+    expect(result.issues).toContain('off-path');
+  });
+
+  it('detecta que el punto de la i se ha dibujado antes de la línea', () => {
+    const result = evaluateStroke([{ x: 50, y: 48 }], iStem, lowerI, {
+      remainingStrokes: [iDot],
+    });
+
+    expect(result.accepted).toBe(false);
+    expect(result.issues).toContain('wrong-order');
+    expect(result.orderHint).toBe(2);
+  });
+
+  it('valida el punto de la j en su propia posición', () => {
+    const accepted = evaluateStroke([{ x: 58, y: 48 }], jDot, lowerJ);
+    expect(accepted.accepted).toBe(true);
+    expect(accepted.metrics.startDistance).toBe(0);
+
+    const far = evaluateStroke([{ x: 30, y: 48 }], jDot, lowerJ);
+    expect(far.accepted).toBe(false);
+    expect(far.issues).toContain('start-too-far');
+  });
+});

@@ -2,7 +2,7 @@
 
 Aplicación educativa **kawaii** para que una niña de unos 4 años aprenda a trazar letras mayúsculas, minúsculas y números. Funciona como PWA instalable y está preparada para empaquetarse como app Android con Capacitor.
 
-> **Estado actual: Sprint 1.5 completado.** La app ya incluye un motor real de trazado y una ficha completa para la **A mayúscula**: guía SVG, tinta Canvas, validación de inicio/recorrido/dirección/orden, feedback amable y registro local. Además, toda la interfaz funciona en vertical y horizontal: Android y la PWA ya no bloquean la orientación y las pantallas se reorganizan para aprovechar el espacio. El resto de fichas y las minúsculas/números llegan en los siguientes sprints.
+> **Estado actual: Sprint 2 completado.** La app incluye el catálogo completo de **64 fichas** (27 mayúsculas, 27 minúsculas y 10 números), todas trazables con el mismo motor: guía SVG, tinta Canvas, validación de inicio/recorrido/dirección/orden, feedback amable y registro local. El Sprint 1.5 dejó la interfaz adaptada a vertical y horizontal, y la A mayúscula conserva exactamente la geometría aprobada en el Sprint 1. Los niveles progresivos, las estrellas definitivas y el sonido llegan en los siguientes sprints.
 
 ---
 
@@ -10,14 +10,14 @@ Aplicación educativa **kawaii** para que una niña de unos 4 años aprenda a tr
 
 - Interfaz completa y navegable: portada, selección de contenidos, vista previa de paquetes, pizarra libre, progreso y recompensas.
 - Identidad kawaii pastel con tipografías locales, mascota SVG y pegatinas SVG.
-- Ejercicio de trazado de la A mayúscula con tres trazos ordenados, flecha, guía punteada y celebración con Mochi.
-- Motor geométrico propio que valida inicio, cobertura, desviación, dirección, final y orden, y rechaza garabatos.
+- Ejercicio de trazado para las 64 fichas: 27 mayúsculas, 27 minúsculas y 10 números, con trazos ordenados, flecha, guía punteada, punto de inicio y celebración con Mochi.
+- Motor geométrico propio que valida inicio, cobertura, desviación, dirección, final y orden, y rechaza garabatos. Admite líneas, curvas y arcos SVG; los puntos de i/j se validan como toque independiente.
 - Pizarra táctil sobre Canvas con Pointer Events, captura de puntero, DPR y `ResizeObserver`.
 - Progreso y ajustes en IndexedDB, sin registro ni datos personales; el ejercicio guarda intentos, rondas completadas, precisión y fecha.
 - PWA con manifest, iconos, service worker y funcionamiento offline.
 - Proyecto Android generado con Capacitor, orientación libre, iconos y splash propios.
 - Diseño adaptable a vertical y horizontal (móvil, tablet y ventana de escritorio) con safe areas y sin scroll horizontal.
-- 81 pruebas automatizadas, TypeScript estricto, ESLint y build de producción verificado.
+- 113 pruebas automatizadas, TypeScript estricto, ESLint y build de producción verificado.
 
 ## Requisitos
 
@@ -142,9 +142,16 @@ Todo el contenido vive en `src/modules/lessons/content.ts`:
 - 27 minúsculas.
 - 10 dígitos.
 
-Cada carácter tiene `id`, `glyph`, nombre accesible, palabra de ejemplo y orden. Los recorridos de escritura viven en `src/modules/lessons/traces/`: hoy está registrada la A mayúscula y el resto se irá añadiendo sin tocar el motor ni las pantallas.
+Cada carácter tiene `id`, `glyph`, nombre accesible, palabra de ejemplo y orden. Los recorridos de escritura viven en `src/modules/lessons/traces/`, separados por paquete:
 
-Para probar el ejercicio, abre `#/aprender/mayusculas/upper-a` o entra en Aprender → Mayúsculas → «Trazar la A».
+- `uppercase.ts`: 27 mayúsculas.
+- `lowercase.ts`: 27 minúsculas, con altura de x en `y=62` y ascendentes/descendentes propios.
+- `digits.ts`: los 10 números.
+- `index.ts`: registro único que consulta la pantalla de ejercicios.
+
+Todas las fichas están registradas, así que el flujo Portada → Aprender → Categoría → Carácter → Ejercicio → Celebración funciona de principio a fin. Si algún día se añade un carácter sin trazos, la app muestra un aviso amable en lugar de romperse.
+
+Para probar cualquier ficha, abre `#/aprender/mayusculas/upper-a`, `#/aprender/minusculas/lower-i`, `#/aprender/numeros/digit-0` o entra en Aprender y elige una letra o un número.
 
 Para añadir un alfabeto nuevo (por ejemplo, cursiva o pictogramas):
 
@@ -181,12 +188,13 @@ npm run test:run
 npm run build
 ```
 
-Resultados de referencia del Sprint 1.5: [`docs/sprint-1.5.md`](docs/sprint-1.5.md). El Sprint 1 queda documentado en [`docs/sprint-1.md`](docs/sprint-1.md) y el Sprint 0 en [`docs/sprint-0.md`](docs/sprint-0.md).
+Resultados de referencia del Sprint 2: [`docs/sprint-2.md`](docs/sprint-2.md). El Sprint 1.5 queda documentado en [`docs/sprint-1.5.md`](docs/sprint-1.5.md), el Sprint 1 en [`docs/sprint-1.md`](docs/sprint-1.md) y el Sprint 0 en [`docs/sprint-0.md`](docs/sprint-0.md).
 
 ## Documentación
 
 - [`docs/architecture.md`](docs/architecture.md): arquitectura, capas, flujos y guías de extensión.
 - [`docs/technical-decisions.md`](docs/technical-decisions.md): registro de decisiones técnicas (ADR).
+- [`docs/sprint-2.md`](docs/sprint-2.md): catálogo completo, geometrías, arcos, puntos y verificación.
 - [`docs/sprint-1.5.md`](docs/sprint-1.5.md): orientación adaptable, distribuciones y verificación.
 - [`docs/sprint-1.md`](docs/sprint-1.md): motor de trazado, algoritmo de validación, pruebas y limitaciones.
 - [`docs/sprint-0.md`](docs/sprint-0.md): entregables y validación de la base técnica.

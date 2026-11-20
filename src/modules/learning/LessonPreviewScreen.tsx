@@ -20,10 +20,12 @@ export function LessonPreviewScreen({ packId }: LessonPreviewScreenProps) {
   }
 
   const itemNoun = pack.scriptId === 'digits' ? 'números' : 'letras';
+  const article = pack.scriptId === 'digits' ? 'el' : 'la';
   const availableCharacters = pack.characters.filter((character) =>
     hasCharacterTrace(character.id),
   );
   const firstAvailable = availableCharacters[0];
+  const complete = availableCharacters.length === pack.characters.length;
 
   return (
     <Screen className={styles.screen}>
@@ -52,7 +54,7 @@ export function LessonPreviewScreen({ packId }: LessonPreviewScreenProps) {
             accent="pink"
             icon={<PencilIcon />}
           >
-            Trazar la {firstAvailable.glyph}
+            Trazar {article} {firstAvailable.glyph}
           </BigActionLink>
         ) : null}
 
@@ -60,12 +62,20 @@ export function LessonPreviewScreen({ packId }: LessonPreviewScreenProps) {
           <SparkleIcon width="24" height="24" />
           <div>
             <strong>
-              {firstAvailable ? '¡La primera ficha ya está lista!' : '¡Muy pronto!'}
+              {complete
+                ? '¡Todas las fichas están listas!'
+                : firstAvailable
+                  ? '¡La primera ficha ya está lista!'
+                  : '¡Muy pronto!'}
             </strong>
             <p>
-              {firstAvailable
-                ? `Toca la ${firstAvailable.glyph} para empezar. Las demás fichas llegan pronto.`
-                : 'Estamos preparando las fichas mágicas para trazar.'}
+              {complete && firstAvailable
+                ? `Toca ${article} ${firstAvailable.glyph} o elige ${
+                    article === 'el' ? 'otro número' : 'otra letra'
+                  }.`
+                : firstAvailable
+                  ? `Toca ${article} ${firstAvailable.glyph} para empezar. Las demás fichas llegan pronto.`
+                  : 'Estamos preparando las fichas mágicas para trazar.'}
             </p>
           </div>
         </aside>

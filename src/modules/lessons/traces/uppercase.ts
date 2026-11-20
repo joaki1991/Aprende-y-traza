@@ -1,64 +1,694 @@
-import type { CharacterTrace } from '../lesson.types';
+import type { CharacterTrace, TraceStroke } from '../lesson.types';
 
 /**
- * Trazos de las mayúsculas.
- *
- * Solo la A está disponible en el Sprint 1 como prueba integral del motor.
- * El resto se irá añadiendo en sprints posteriores sin tocar la interfaz:
- * basta con registrar aquí su `CharacterTrace`.
+ * Trazos de las 27 mayúsculas españolas.
  *
  * Convención de coordenadas: `viewBox="0 0 100 140"`, origen arriba a la
- * izquierda. Los puntos de inicio y fin deben coincidir con los extremos del
- * `path` para que la validación sea coherente.
+ * izquierda. El cuerpo de las letras va de y=16 (altura de mayúscula) a y=122
+ * (línea base). Los puntos de inicio y fin deben coincidir exactamente con los
+ * extremos del `path`: el motor los usa para validar entrada y salida.
+ *
+ * La A conserva la geometría aprobada en el Sprint 1.
  */
 
-const APEX_Y = 16;
-const BASE_Y = 122;
-const CROSSBAR_Y = 88;
+const VIEW_BOX = '0 0 100 140';
 
-const LEFT_FOOT_X = 20;
-const RIGHT_FOOT_X = 80;
-const CROSSBAR_LEFT_X = 29.6;
-const CROSSBAR_RIGHT_X = 70.4;
+function trace(characterId: string, strokes: readonly TraceStroke[]): CharacterTrace {
+  return { characterId, viewBox: VIEW_BOX, strokes };
+}
 
 export const UPPERCASE_TRACES: Record<string, CharacterTrace> = {
-  'upper-a': {
-    characterId: 'upper-a',
-    viewBox: '0 0 100 140',
-    strokes: [
-      {
-        id: 'upper-a-left',
-        order: 1,
-        path: `M50 ${APEX_Y} L${LEFT_FOOT_X} ${BASE_Y}`,
-        label: 'Diagonal izquierda',
-        instruction: 'Baja desde la punta hacia la izquierda.',
-        start: { x: 50, y: APEX_Y },
-        end: { x: LEFT_FOOT_X, y: BASE_Y },
-        direction: 'down',
-        tolerance: 0.11,
-      },
-      {
-        id: 'upper-a-right',
-        order: 2,
-        path: `M50 ${APEX_Y} L${RIGHT_FOOT_X} ${BASE_Y}`,
-        label: 'Diagonal derecha',
-        instruction: 'Vuelve arriba y baja hacia la derecha.',
-        start: { x: 50, y: APEX_Y },
-        end: { x: RIGHT_FOOT_X, y: BASE_Y },
-        direction: 'down',
-        tolerance: 0.11,
-      },
-      {
-        id: 'upper-a-crossbar',
-        order: 3,
-        path: `M${CROSSBAR_LEFT_X} ${CROSSBAR_Y} L${CROSSBAR_RIGHT_X} ${CROSSBAR_Y}`,
-        label: 'Línea del medio',
-        instruction: 'Cruza una línea en el medio, de izquierda a derecha.',
-        start: { x: CROSSBAR_LEFT_X, y: CROSSBAR_Y },
-        end: { x: CROSSBAR_RIGHT_X, y: CROSSBAR_Y },
-        direction: 'right',
-        tolerance: 0.12,
-      },
-    ],
-  },
+  'upper-a': trace('upper-a', [
+    {
+      id: 'upper-a-left',
+      order: 1,
+      path: 'M50 16 L20 122',
+      label: 'Diagonal izquierda',
+      instruction: 'Baja desde la punta hacia la izquierda.',
+      start: { x: 50, y: 16 },
+      end: { x: 20, y: 122 },
+      direction: 'down',
+      tolerance: 0.11,
+    },
+    {
+      id: 'upper-a-right',
+      order: 2,
+      path: 'M50 16 L80 122',
+      label: 'Diagonal derecha',
+      instruction: 'Vuelve arriba y baja hacia la derecha.',
+      start: { x: 50, y: 16 },
+      end: { x: 80, y: 122 },
+      direction: 'down',
+      tolerance: 0.11,
+    },
+    {
+      id: 'upper-a-crossbar',
+      order: 3,
+      path: 'M29.6 88 L70.4 88',
+      label: 'Línea del medio',
+      instruction: 'Cruza una línea en el medio, de izquierda a derecha.',
+      start: { x: 29.6, y: 88 },
+      end: { x: 70.4, y: 88 },
+      direction: 'right',
+      tolerance: 0.12,
+    },
+  ]),
+
+  'upper-b': trace('upper-b', [
+    {
+      id: 'upper-b-stem',
+      order: 1,
+      path: 'M28 16 L28 122',
+      label: 'Línea vertical',
+      instruction: 'Baja una línea recta.',
+      start: { x: 28, y: 16 },
+      end: { x: 28, y: 122 },
+      direction: 'down',
+    },
+    {
+      id: 'upper-b-top',
+      order: 2,
+      path: 'M28 16 C48 16 70 26 70 42 C70 58 48 70 28 70',
+      label: 'Curva de arriba',
+      instruction: 'Haz una curva pequeña hacia la derecha.',
+      start: { x: 28, y: 16 },
+      end: { x: 28, y: 70 },
+      direction: 'curve',
+    },
+    {
+      id: 'upper-b-bottom',
+      order: 3,
+      path: 'M28 70 C52 70 74 82 74 96 C74 110 52 122 28 122',
+      label: 'Curva de abajo',
+      instruction: 'Haz otra curva más grande abajo.',
+      start: { x: 28, y: 70 },
+      end: { x: 28, y: 122 },
+      direction: 'curve',
+    },
+  ]),
+
+  'upper-c': trace('upper-c', [
+    {
+      id: 'upper-c-curve',
+      order: 1,
+      path: 'M74 32 A34 52 0 1 0 74 106',
+      label: 'Curva grande',
+      instruction: 'Haz una curva abierta como una luna.',
+      start: { x: 74, y: 32 },
+      end: { x: 74, y: 106 },
+      direction: 'counter-clockwise',
+    },
+  ]),
+
+  'upper-d': trace('upper-d', [
+    {
+      id: 'upper-d-stem',
+      order: 1,
+      path: 'M30 16 L30 122',
+      label: 'Línea vertical',
+      instruction: 'Baja una línea recta.',
+      start: { x: 30, y: 16 },
+      end: { x: 30, y: 122 },
+      direction: 'down',
+    },
+    {
+      id: 'upper-d-bowl',
+      order: 2,
+      path: 'M30 16 C56 16 78 40 78 69 C78 98 56 122 30 122',
+      label: 'Barriga',
+      instruction: 'Haz una barriga grande hacia la derecha.',
+      start: { x: 30, y: 16 },
+      end: { x: 30, y: 122 },
+      direction: 'curve',
+    },
+  ]),
+
+  'upper-e': trace('upper-e', [
+    {
+      id: 'upper-e-stem',
+      order: 1,
+      path: 'M30 16 L30 122',
+      label: 'Línea vertical',
+      instruction: 'Baja una línea recta.',
+      start: { x: 30, y: 16 },
+      end: { x: 30, y: 122 },
+      direction: 'down',
+    },
+    {
+      id: 'upper-e-top',
+      order: 2,
+      path: 'M30 16 L76 16',
+      label: 'Línea de arriba',
+      instruction: 'Cruza una línea arriba, hacia la derecha.',
+      start: { x: 30, y: 16 },
+      end: { x: 76, y: 16 },
+      direction: 'right',
+    },
+    {
+      id: 'upper-e-middle',
+      order: 3,
+      path: 'M30 69 L68 69',
+      label: 'Línea del medio',
+      instruction: 'Cruza otra línea en el medio.',
+      start: { x: 30, y: 69 },
+      end: { x: 68, y: 69 },
+      direction: 'right',
+    },
+    {
+      id: 'upper-e-bottom',
+      order: 4,
+      path: 'M30 122 L76 122',
+      label: 'Línea de abajo',
+      instruction: 'Cruza la última línea abajo.',
+      start: { x: 30, y: 122 },
+      end: { x: 76, y: 122 },
+      direction: 'right',
+    },
+  ]),
+
+  'upper-f': trace('upper-f', [
+    {
+      id: 'upper-f-stem',
+      order: 1,
+      path: 'M30 16 L30 122',
+      label: 'Línea vertical',
+      instruction: 'Baja una línea recta.',
+      start: { x: 30, y: 16 },
+      end: { x: 30, y: 122 },
+      direction: 'down',
+    },
+    {
+      id: 'upper-f-top',
+      order: 2,
+      path: 'M30 16 L76 16',
+      label: 'Línea de arriba',
+      instruction: 'Cruza una línea arriba, hacia la derecha.',
+      start: { x: 30, y: 16 },
+      end: { x: 76, y: 16 },
+      direction: 'right',
+    },
+    {
+      id: 'upper-f-middle',
+      order: 3,
+      path: 'M30 69 L68 69',
+      label: 'Línea del medio',
+      instruction: 'Cruza otra línea en el medio.',
+      start: { x: 30, y: 69 },
+      end: { x: 68, y: 69 },
+      direction: 'right',
+    },
+  ]),
+
+  'upper-g': trace('upper-g', [
+    {
+      id: 'upper-g-curve',
+      order: 1,
+      path: 'M74 32 A34 52 0 1 0 74 106',
+      label: 'Curva grande',
+      instruction: 'Haz una curva grande y abierta.',
+      start: { x: 74, y: 32 },
+      end: { x: 74, y: 106 },
+      direction: 'counter-clockwise',
+    },
+    {
+      id: 'upper-g-bar',
+      order: 2,
+      path: 'M74 106 L74 78 L52 78',
+      label: 'Barra de la G',
+      instruction: 'Sube y entra hacia el centro.',
+      start: { x: 74, y: 106 },
+      end: { x: 52, y: 78 },
+      direction: 'curve',
+    },
+  ]),
+
+  'upper-h': trace('upper-h', [
+    {
+      id: 'upper-h-left',
+      order: 1,
+      path: 'M28 16 L28 122',
+      label: 'Línea izquierda',
+      instruction: 'Baja una línea recta.',
+      start: { x: 28, y: 16 },
+      end: { x: 28, y: 122 },
+      direction: 'down',
+    },
+    {
+      id: 'upper-h-right',
+      order: 2,
+      path: 'M72 16 L72 122',
+      label: 'Línea derecha',
+      instruction: 'Baja otra línea a la derecha.',
+      start: { x: 72, y: 16 },
+      end: { x: 72, y: 122 },
+      direction: 'down',
+    },
+    {
+      id: 'upper-h-crossbar',
+      order: 3,
+      path: 'M28 69 L72 69',
+      label: 'Línea del medio',
+      instruction: 'Cruza en el medio para unirlas.',
+      start: { x: 28, y: 69 },
+      end: { x: 72, y: 69 },
+      direction: 'right',
+    },
+  ]),
+
+  'upper-i': trace('upper-i', [
+    {
+      id: 'upper-i-stem',
+      order: 1,
+      path: 'M50 16 L50 122',
+      label: 'Línea vertical',
+      instruction: 'Baja una línea recta.',
+      start: { x: 50, y: 16 },
+      end: { x: 50, y: 122 },
+      direction: 'down',
+    },
+  ]),
+
+  'upper-j': trace('upper-j', [
+    {
+      id: 'upper-j-hook',
+      order: 1,
+      path: 'M64 16 L64 94 C64 112 50 122 34 112',
+      label: 'Línea con gancho',
+      instruction: 'Baja y termina con un ganchito.',
+      start: { x: 64, y: 16 },
+      end: { x: 34, y: 112 },
+      direction: 'curve',
+    },
+  ]),
+
+  'upper-k': trace('upper-k', [
+    {
+      id: 'upper-k-stem',
+      order: 1,
+      path: 'M30 16 L30 122',
+      label: 'Línea vertical',
+      instruction: 'Baja una línea recta.',
+      start: { x: 30, y: 16 },
+      end: { x: 30, y: 122 },
+      direction: 'down',
+    },
+    {
+      id: 'upper-k-arm',
+      order: 2,
+      path: 'M74 16 L30 70',
+      label: 'Diagonal de arriba',
+      instruction: 'Baja una diagonal hasta el medio.',
+      start: { x: 74, y: 16 },
+      end: { x: 30, y: 70 },
+      direction: 'down',
+    },
+    {
+      id: 'upper-k-leg',
+      order: 3,
+      path: 'M30 70 L74 122',
+      label: 'Diagonal de abajo',
+      instruction: 'Baja otra diagonal hacia la derecha.',
+      start: { x: 30, y: 70 },
+      end: { x: 74, y: 122 },
+      direction: 'down',
+    },
+  ]),
+
+  'upper-l': trace('upper-l', [
+    {
+      id: 'upper-l-stem',
+      order: 1,
+      path: 'M30 16 L30 122',
+      label: 'Línea vertical',
+      instruction: 'Baja una línea recta.',
+      start: { x: 30, y: 16 },
+      end: { x: 30, y: 122 },
+      direction: 'down',
+    },
+    {
+      id: 'upper-l-base',
+      order: 2,
+      path: 'M30 122 L76 122',
+      label: 'Línea de abajo',
+      instruction: 'Anda a la derecha por abajo.',
+      start: { x: 30, y: 122 },
+      end: { x: 76, y: 122 },
+      direction: 'right',
+    },
+  ]),
+
+  'upper-m': trace('upper-m', [
+    {
+      id: 'upper-m-left',
+      order: 1,
+      path: 'M24 122 L24 16',
+      label: 'Línea izquierda',
+      instruction: 'Sube una línea recta.',
+      start: { x: 24, y: 122 },
+      end: { x: 24, y: 16 },
+      direction: 'up',
+    },
+    {
+      id: 'upper-m-first-valley',
+      order: 2,
+      path: 'M24 16 L50 92',
+      label: 'Diagonal al medio',
+      instruction: 'Baja hasta el medio.',
+      start: { x: 24, y: 16 },
+      end: { x: 50, y: 92 },
+      direction: 'down',
+    },
+    {
+      id: 'upper-m-second-valley',
+      order: 3,
+      path: 'M50 92 L76 16',
+      label: 'Diagonal a la derecha',
+      instruction: 'Sube hasta arriba a la derecha.',
+      start: { x: 50, y: 92 },
+      end: { x: 76, y: 16 },
+      direction: 'up',
+    },
+    {
+      id: 'upper-m-right',
+      order: 4,
+      path: 'M76 16 L76 122',
+      label: 'Línea derecha',
+      instruction: 'Baja una línea recta.',
+      start: { x: 76, y: 16 },
+      end: { x: 76, y: 122 },
+      direction: 'down',
+    },
+  ]),
+
+  'upper-n': trace('upper-n', [
+    {
+      id: 'upper-n-left',
+      order: 1,
+      path: 'M26 16 L26 122',
+      label: 'Línea izquierda',
+      instruction: 'Baja una línea recta.',
+      start: { x: 26, y: 16 },
+      end: { x: 26, y: 122 },
+      direction: 'down',
+    },
+    {
+      id: 'upper-n-diagonal',
+      order: 2,
+      path: 'M26 16 L74 122',
+      label: 'Diagonal',
+      instruction: 'Baja una diagonal hasta la derecha.',
+      start: { x: 26, y: 16 },
+      end: { x: 74, y: 122 },
+      direction: 'down',
+    },
+    {
+      id: 'upper-n-right',
+      order: 3,
+      path: 'M74 122 L74 16',
+      label: 'Línea derecha',
+      instruction: 'Sube una línea recta.',
+      start: { x: 74, y: 122 },
+      end: { x: 74, y: 16 },
+      direction: 'up',
+    },
+  ]),
+
+  'upper-ñ': trace('upper-ñ', [
+    {
+      id: 'upper-ñ-left',
+      order: 1,
+      path: 'M26 24 L26 122',
+      label: 'Línea izquierda',
+      instruction: 'Baja una línea recta.',
+      start: { x: 26, y: 24 },
+      end: { x: 26, y: 122 },
+      direction: 'down',
+    },
+    {
+      id: 'upper-ñ-diagonal',
+      order: 2,
+      path: 'M26 24 L74 122',
+      label: 'Diagonal',
+      instruction: 'Baja una diagonal hasta la derecha.',
+      start: { x: 26, y: 24 },
+      end: { x: 74, y: 122 },
+      direction: 'down',
+    },
+    {
+      id: 'upper-ñ-right',
+      order: 3,
+      path: 'M74 122 L74 24',
+      label: 'Línea derecha',
+      instruction: 'Sube una línea recta.',
+      start: { x: 74, y: 122 },
+      end: { x: 74, y: 24 },
+      direction: 'up',
+    },
+    {
+      id: 'upper-ñ-tilde',
+      order: 4,
+      path: 'M34 12 C40 5 48 17 56 11 C60 8 64 9 68 12',
+      label: 'Virgulilla',
+      instruction: 'Haz una ola pequeña arriba.',
+      start: { x: 34, y: 12 },
+      end: { x: 68, y: 12 },
+      direction: 'curve',
+    },
+  ]),
+
+  'upper-o': trace('upper-o', [
+    {
+      id: 'upper-o-round',
+      order: 1,
+      path: 'M50 18 A32 51 0 0 0 50 120 A32 51 0 0 0 50 18',
+      label: 'Vuelta redonda',
+      instruction: 'Da una vuelta redonda, sin parar.',
+      start: { x: 50, y: 18 },
+      end: { x: 50, y: 18 },
+      direction: 'counter-clockwise',
+    },
+  ]),
+
+  'upper-p': trace('upper-p', [
+    {
+      id: 'upper-p-stem',
+      order: 1,
+      path: 'M30 16 L30 122',
+      label: 'Línea vertical',
+      instruction: 'Baja una línea recta.',
+      start: { x: 30, y: 16 },
+      end: { x: 30, y: 122 },
+      direction: 'down',
+    },
+    {
+      id: 'upper-p-bowl',
+      order: 2,
+      path: 'M30 16 C52 16 72 26 72 43 C72 60 52 70 30 70',
+      label: 'Barriga',
+      instruction: 'Haz una barriga arriba, hacia la derecha.',
+      start: { x: 30, y: 16 },
+      end: { x: 30, y: 70 },
+      direction: 'curve',
+    },
+  ]),
+
+  'upper-q': trace('upper-q', [
+    {
+      id: 'upper-q-round',
+      order: 1,
+      path: 'M50 18 A32 51 0 0 0 50 120 A32 51 0 0 0 50 18',
+      label: 'Vuelta redonda',
+      instruction: 'Da una vuelta redonda, sin parar.',
+      start: { x: 50, y: 18 },
+      end: { x: 50, y: 18 },
+      direction: 'counter-clockwise',
+    },
+    {
+      id: 'upper-q-tail',
+      order: 2,
+      path: 'M69 102 L86 126',
+      label: 'Rabo',
+      instruction: 'Haz un rabito abajo a la derecha.',
+      start: { x: 69, y: 102 },
+      end: { x: 86, y: 126 },
+      direction: 'down',
+    },
+  ]),
+
+  'upper-r': trace('upper-r', [
+    {
+      id: 'upper-r-stem',
+      order: 1,
+      path: 'M30 16 L30 122',
+      label: 'Línea vertical',
+      instruction: 'Baja una línea recta.',
+      start: { x: 30, y: 16 },
+      end: { x: 30, y: 122 },
+      direction: 'down',
+    },
+    {
+      id: 'upper-r-bowl',
+      order: 2,
+      path: 'M30 16 C52 16 72 26 72 43 C72 60 52 70 30 70',
+      label: 'Barriga',
+      instruction: 'Haz una barriga arriba.',
+      start: { x: 30, y: 16 },
+      end: { x: 30, y: 70 },
+      direction: 'curve',
+    },
+    {
+      id: 'upper-r-leg',
+      order: 3,
+      path: 'M52 70 L78 122',
+      label: 'Pata',
+      instruction: 'Baja una pata hacia la derecha.',
+      start: { x: 52, y: 70 },
+      end: { x: 78, y: 122 },
+      direction: 'down',
+    },
+  ]),
+
+  'upper-s': trace('upper-s', [
+    {
+      id: 'upper-s-curve',
+      order: 1,
+      path: 'M74 30 C68 16 40 14 30 30 C20 46 36 60 50 66 C66 73 78 86 72 102 C64 118 36 120 26 104',
+      label: 'Serpiente',
+      instruction: 'Dibuja una serpiente de arriba a abajo.',
+      start: { x: 74, y: 30 },
+      end: { x: 26, y: 104 },
+      direction: 'curve',
+    },
+  ]),
+
+  'upper-t': trace('upper-t', [
+    {
+      id: 'upper-t-top',
+      order: 1,
+      path: 'M24 16 L76 16',
+      label: 'Línea de arriba',
+      instruction: 'Cruza una línea arriba.',
+      start: { x: 24, y: 16 },
+      end: { x: 76, y: 16 },
+      direction: 'right',
+    },
+    {
+      id: 'upper-t-stem',
+      order: 2,
+      path: 'M50 16 L50 122',
+      label: 'Línea vertical',
+      instruction: 'Baja una línea recta.',
+      start: { x: 50, y: 16 },
+      end: { x: 50, y: 122 },
+      direction: 'down',
+    },
+  ]),
+
+  'upper-u': trace('upper-u', [
+    {
+      id: 'upper-u-curve',
+      order: 1,
+      path: 'M26 16 L26 86 C26 112 74 112 74 86 L74 16',
+      label: 'Curva de la U',
+      instruction: 'Baja, da la vuelta y sube.',
+      start: { x: 26, y: 16 },
+      end: { x: 74, y: 16 },
+      direction: 'curve',
+    },
+  ]),
+
+  'upper-v': trace('upper-v', [
+    {
+      id: 'upper-v-curve',
+      order: 1,
+      path: 'M24 16 L50 122 L76 16',
+      label: 'Pico de la V',
+      instruction: 'Baja hasta el fondo y sube.',
+      start: { x: 24, y: 16 },
+      end: { x: 76, y: 16 },
+      direction: 'curve',
+    },
+  ]),
+
+  'upper-w': trace('upper-w', [
+    {
+      id: 'upper-w-curve',
+      order: 1,
+      path: 'M18 16 L32 122 L50 40 L68 122 L82 16',
+      label: 'Picos de la W',
+      instruction: 'Baja y sube, baja y sube.',
+      start: { x: 18, y: 16 },
+      end: { x: 82, y: 16 },
+      direction: 'curve',
+    },
+  ]),
+
+  'upper-x': trace('upper-x', [
+    {
+      id: 'upper-x-first',
+      order: 1,
+      path: 'M24 16 L76 122',
+      label: 'Primera diagonal',
+      instruction: 'Baja una diagonal.',
+      start: { x: 24, y: 16 },
+      end: { x: 76, y: 122 },
+      direction: 'down',
+    },
+    {
+      id: 'upper-x-second',
+      order: 2,
+      path: 'M76 16 L24 122',
+      label: 'Segunda diagonal',
+      instruction: 'Cruza con otra diagonal.',
+      start: { x: 76, y: 16 },
+      end: { x: 24, y: 122 },
+      direction: 'down',
+    },
+  ]),
+
+  'upper-y': trace('upper-y', [
+    {
+      id: 'upper-y-left',
+      order: 1,
+      path: 'M26 16 L50 69',
+      label: 'Diagonal izquierda',
+      instruction: 'Baja una diagonal al medio.',
+      start: { x: 26, y: 16 },
+      end: { x: 50, y: 69 },
+      direction: 'down',
+    },
+    {
+      id: 'upper-y-right',
+      order: 2,
+      path: 'M74 16 L50 69',
+      label: 'Diagonal derecha',
+      instruction: 'Baja otra diagonal al medio.',
+      start: { x: 74, y: 16 },
+      end: { x: 50, y: 69 },
+      direction: 'down',
+    },
+    {
+      id: 'upper-y-stem',
+      order: 3,
+      path: 'M50 69 L50 122',
+      label: 'Línea vertical',
+      instruction: 'Baja una línea recta.',
+      start: { x: 50, y: 69 },
+      end: { x: 50, y: 122 },
+      direction: 'down',
+    },
+  ]),
+
+  'upper-z': trace('upper-z', [
+    {
+      id: 'upper-z-zigzag',
+      order: 1,
+      path: 'M24 16 L76 16 L24 122 L76 122',
+      label: 'Zigzag de la Z',
+      instruction: 'Cruza arriba, baja en diagonal y cruza abajo.',
+      start: { x: 24, y: 16 },
+      end: { x: 76, y: 122 },
+      direction: 'curve',
+    },
+  ]),
 };

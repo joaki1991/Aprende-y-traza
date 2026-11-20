@@ -24,8 +24,13 @@ function pageTitle(route: AppRoute): string {
     case 'lesson':
       return `${getLessonPack(route.packId)?.title ?? 'Lección'} · ${APP_NAME}`;
     case 'trace': {
+      const pack = getLessonPack(route.packId);
       const glyph = getLessonCharacter(route.packId, route.characterId)?.glyph;
-      return glyph ? `Trazar la ${glyph} · ${APP_NAME}` : `Trazar · ${APP_NAME}`;
+      if (!glyph) {
+        return `Trazar · ${APP_NAME}`;
+      }
+      const article = pack?.scriptId === 'digits' ? 'el' : 'la';
+      return `Trazar ${article} ${glyph} · ${APP_NAME}`;
     }
     case 'doodle':
       return `Pizarra mágica · ${APP_NAME}`;

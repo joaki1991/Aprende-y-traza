@@ -62,6 +62,61 @@ describe('muestreo de paths SVG', () => {
   });
 });
 
+describe('arcos SVG', () => {
+  it('muestrea una semicircunferencia con su longitud', () => {
+    const arc = samplePath('M0 0 A10 10 0 0 1 20 0', 0.4);
+    expect(arc.points[0]).toEqual({ x: 0, y: 0 });
+    expect(arc.points.at(-1)?.x).toBeCloseTo(20, 3);
+    expect(arc.points.at(-1)?.y).toBeCloseTo(0, 3);
+    // El arco pasa por arriba: en SVG la y crece hacia abajo.
+    const highest = Math.min(...arc.points.map((point) => point.y));
+    expect(highest).toBeCloseTo(-10, 1);
+    expect(arc.length).toBeCloseTo(Math.PI * 10, 1);
+  });
+
+  it('cierra un bucle completo con dos arcos, como la O o el 0', () => {
+    const loop = samplePath('M50 18 A32 51 0 0 0 50 120 A32 51 0 0 0 50 18', 0.4);
+    const first = loop.points[0];
+    const last = loop.points.at(-1);
+
+    expect(first?.x).toBeCloseTo(50, 3);
+    expect(first?.y).toBeCloseTo(18, 3);
+    expect(last?.x).toBeCloseTo(50, 3);
+    expect(last?.y).toBeCloseTo(18, 3);
+
+    const xs = loop.points.map((point) => point.x);
+    const ys = loop.points.map((point) => point.y);
+    expect(Math.min(...xs)).toBeCloseTo(18, 0);
+    expect(Math.max(...xs)).toBeCloseTo(82, 0);
+    expect(Math.min(...ys)).toBeCloseTo(18, 0);
+    expect(Math.max(...ys)).toBeCloseTo(120, 0);
+    // Perímetro de la elipse rx=32, ry=51 (aproximación de Ramanujan).
+    expect(loop.length).toBeCloseTo(264.17, 0);
+  });
+
+  it('trata un arco de radio cero como una línea recta', () => {
+    const line = samplePath('M0 0 A0 10 0 0 0 20 0');
+    expect(line.points.at(-1)).toEqual({ x: 20, y: 0 });
+    expect(line.length).toBeCloseTo(20, 3);
+  });
+
+  it('distingue el arco grande del pequeño con los mismos extremos', () => {
+    const small = samplePath('M0 0 A10 10 0 0 1 10 10', 0.4);
+    const large = samplePath('M0 0 A10 10 0 1 1 10 10', 0.4);
+
+    expect(small.points.at(-1)?.x).toBeCloseTo(10, 3);
+    expect(large.points.at(-1)?.x).toBeCloseTo(10, 3);
+    expect(large.length).toBeGreaterThan(small.length * 2);
+  });
+
+  it('ignora un arco incompleto sin romper el muestreo', () => {
+    const partial = samplePath('M0 0 A10');
+    expect(partial.points.length).toBeGreaterThan(0);
+    expect(partial.points.every((point) => Number.isFinite(point.x))).toBe(true);
+    expect(partial.points.every((point) => Number.isFinite(point.y))).toBe(true);
+  });
+});
+
 describe('distancias y puntos de referencia', () => {
   const horizontal = polylineFromPoints([
     { x: 0, y: 0 },

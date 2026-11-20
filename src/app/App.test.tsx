@@ -86,12 +86,25 @@ describe('App', () => {
     expect(document.title).toBe('Trazar la A · Aprende y Traza');
   });
 
-  it('avisa con cariño cuando una ficha aún no tiene trazos', () => {
-    renderAt('#/aprender/mayusculas/upper-b');
+  it('marca todas las fichas del catálogo como disponibles', () => {
+    renderAt('#/aprender/numeros');
+    expect(screen.getByRole('heading', { level: 1, name: 'Números' })).toBeInTheDocument();
+    expect(screen.getByText(/todas las fichas están listas/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /trazar número cero: cero/i })).toHaveAttribute(
+      'href',
+      '#/aprender/numeros/digit-0',
+    );
+    expect(screen.getByRole('link', { name: /trazar número nueve: nueve/i })).toHaveAttribute(
+      'href',
+      '#/aprender/numeros/digit-9',
+    );
+  });
 
-    expect(screen.getByRole('heading', { level: 1, name: 'B' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /muy pronto/i })).toBeInTheDocument();
-    expect(screen.getByText(/la ficha de la b todavía se está preparando/i)).toBeInTheDocument();
+  it('usa el artículo correcto en el título de los números', () => {
+    renderAt('#/aprender/numeros/digit-8');
+
+    expect(screen.getByRole('heading', { level: 1, name: 'El 8' })).toBeInTheDocument();
+    expect(document.title).toBe('Trazar el 8 · Aprende y Traza');
   });
 
   it('muestra una pantalla amable para rutas desconocidas', () => {

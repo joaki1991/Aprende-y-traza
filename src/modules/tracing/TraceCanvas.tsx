@@ -309,7 +309,11 @@ export function TraceCanvas({
     <canvas
       ref={canvasRef}
       className={styles.canvas}
-      aria-label={`Zona para trazar la letra ${glyph} con el dedo`}
+      aria-label={
+        /^\d$/.test(glyph)
+          ? `Zona para trazar el número ${glyph} con el dedo`
+          : `Zona para trazar la letra ${glyph} con el dedo`
+      }
       onPointerDown={startStroke}
       onPointerMove={continueStroke}
       onPointerUp={finishStroke}

@@ -45,44 +45,57 @@ export function TraceGuide({ trace, currentStrokeIndex, pulseKey = 0 }: TraceGui
       {trace.strokes.map((stroke, index) => {
         const state: StrokeState =
           index < currentStrokeIndex ? 'completed' : index === currentStrokeIndex ? 'current' : 'pending';
+        const isDot = stroke.kind === 'dot';
 
         return (
           <g key={stroke.id}>
-            <path
-              className={styles.base}
-              data-state={state}
-              d={stroke.path}
-              fill="none"
-              strokeDasharray="0.8 4.6"
-              strokeLinecap="round"
-            />
-            {state === 'completed' ? (
-              <path
-                className={styles.completed}
-                d={stroke.path}
-                fill="none"
-                pathLength={1}
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            {isDot ? (
+              <circle
+                className={styles.dotMark}
+                data-state={state}
+                cx={stroke.start.x}
+                cy={stroke.start.y}
+                r={state === 'current' ? 5.4 : 3.8}
               />
-            ) : null}
-            {state === 'current' ? (
-              <path
-                className={styles.current}
-                d={stroke.path}
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            ) : null}
+            ) : (
+              <>
+                <path
+                  className={styles.base}
+                  data-state={state}
+                  d={stroke.path}
+                  fill="none"
+                  strokeDasharray="0.8 4.6"
+                  strokeLinecap="round"
+                />
+                {state === 'completed' ? (
+                  <path
+                    className={styles.completed}
+                    d={stroke.path}
+                    fill="none"
+                    pathLength={1}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                ) : null}
+                {state === 'current' ? (
+                  <path
+                    className={styles.current}
+                    d={stroke.path}
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                ) : null}
 
-            <circle
-              className={styles.startDot}
-              data-state={state}
-              cx={stroke.start.x}
-              cy={stroke.start.y}
-              r={state === 'current' ? 4.4 : 3.2}
-            />
+                <circle
+                  className={styles.startDot}
+                  data-state={state}
+                  cx={stroke.start.x}
+                  cy={stroke.start.y}
+                  r={state === 'current' ? 4.4 : 3.2}
+                />
+              </>
+            )}
 
             {state === 'current' ? (
               <circle
@@ -97,7 +110,7 @@ export function TraceGuide({ trace, currentStrokeIndex, pulseKey = 0 }: TraceGui
         );
       })}
 
-      {arrow && currentStroke ? (
+      {arrow && currentStroke && currentStroke.kind !== 'dot' ? (
         <g
           key={`${pulseKey}-arrow-${currentStroke.id}`}
           className={styles.arrow}
