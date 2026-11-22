@@ -61,8 +61,8 @@ export function HomeScreen() {
         />
         <BigTile
           href={ROUTES.rewards}
-          label="Sorpresas"
-          hint="Gana pegatinas"
+          label="Recompensas"
+          hint="Desbloquea dibujos y pegatinas"
           accent="lilac"
           icon={<GiftIcon />}
         />

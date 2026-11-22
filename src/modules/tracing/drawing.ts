@@ -30,16 +30,39 @@ export interface CanvasRect {
 }
 
 export const DOODLE_COLORS = [
-  { id: 'fresa', name: 'rosa fresa', value: '#ff8fae' },
-  { id: 'menta', name: 'verde menta', value: '#4fcfA6' },
-  { id: 'cielo', name: 'azul cielo', value: '#58b6ea' },
-  { id: 'uva', name: 'lila uva', value: '#a98ae6' },
-  { id: 'sol', name: 'amarillo sol', value: '#f3c04d' },
+  { id: 'rojo', name: 'rojo', value: '#e8453c' },
+  { id: 'rosa', name: 'rosa', value: '#ff6fa5' },
+  { id: 'rosa-claro', name: 'rosa claro', value: '#ffb3c8' },
+  { id: 'naranja', name: 'naranja', value: '#ff8a3d' },
+  { id: 'amarillo', name: 'amarillo', value: '#ffd23f' },
+  { id: 'verde-claro', name: 'verde claro', value: '#7ed957' },
+  { id: 'verde-oscuro', name: 'verde oscuro', value: '#2f9e44' },
+  { id: 'azul-claro', name: 'azul claro', value: '#6fc3ff' },
+  { id: 'azul-oscuro', name: 'azul oscuro', value: '#2f6fd0' },
+  { id: 'turquesa', name: 'turquesa', value: '#2ec4b6' },
+  { id: 'morado', name: 'morado', value: '#8e5bd6' },
+  { id: 'lila', name: 'lila', value: '#c9a7f5' },
+  { id: 'marron', name: 'marrón', value: '#8b5a2b' },
+  { id: 'beige', name: 'beige', value: '#e8d3b0' },
+  { id: 'gris', name: 'gris', value: '#9aa0a6' },
+  { id: 'negro', name: 'negro', value: '#2b2b2b' },
+  { id: 'blanco', name: 'blanco', value: '#ffffff' },
 ] as const;
 
 export type DoodleColorOption = (typeof DOODLE_COLORS)[number];
 
 export const DEFAULT_DOODLE_COLOR: string = DOODLE_COLORS[0].value;
+
+/** Grosores pensados para dedos pequeños, en píxeles del tablero. */
+export const DOODLE_BRUSH_SIZES = [
+  { id: 'fino', name: 'fino', value: 8 },
+  { id: 'medio', name: 'medio', value: 14 },
+  { id: 'grueso', name: 'grueso', value: 22 },
+] as const;
+
+export type DoodleBrushOption = (typeof DOODLE_BRUSH_SIZES)[number];
+
+export const DEFAULT_DOODLE_BRUSH: number = DOODLE_BRUSH_SIZES[1].value;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));

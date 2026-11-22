@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ROUTES, characterHref, lessonHref, parseRoute, routeKey } from './router';
+import { ROUTES, characterHref, drawingHref, lessonHref, parseRoute, routeKey } from './router';
 
 describe('parseRoute', () => {
   it('interpreta la portada con hash vacío o raíz', () => {
@@ -39,6 +39,22 @@ describe('parseRoute', () => {
     });
   });
 
+  it('abre la pizarra con la plantilla de un dibujo', () => {
+    expect(parseRoute(drawingHref('letter-a'))).toEqual({
+      name: 'coloring',
+      drawingId: 'letter-a',
+    });
+    expect(parseRoute('#/pizarra/dibujo/number-7')).toEqual({
+      name: 'coloring',
+      drawingId: 'number-7',
+    });
+  });
+
+  it('mantiene la pizarra libre si falta el dibujo', () => {
+    expect(parseRoute('#/pizarra/dibujo')).toEqual({ name: 'doodle' });
+    expect(parseRoute('#/pizarra/dibujo/')).toEqual({ name: 'doodle' });
+  });
+
   it('devuelve una ruta segura para URLs desconocidas', () => {
     expect(parseRoute('#/secreto')).toEqual({ name: 'notFound' });
     expect(parseRoute('#/aprender/mayusculas/upper-a/extra')).toMatchObject({
@@ -50,6 +66,7 @@ describe('parseRoute', () => {
   it('expone los enlaces centralizados', () => {
     expect(ROUTES.learning).toBe('#/aprender');
     expect(lessonHref('numeros')).toBe('#/aprender/numeros');
+    expect(drawingHref('letter-enye')).toBe('#/pizarra/dibujo/letter-enye');
   });
 });
 
@@ -60,5 +77,13 @@ describe('routeKey', () => {
       'trace:mayusculas:upper-a',
     );
     expect(routeKey({ name: 'home' })).toBe('home');
+  });
+
+  it('reinicia la pizarra al cambiar de dibujo', () => {
+    expect(routeKey({ name: 'coloring', drawingId: 'letter-a' })).toBe('coloring:letter-a');
+    expect(routeKey({ name: 'coloring', drawingId: 'letter-b' })).not.toBe(
+      routeKey({ name: 'coloring', drawingId: 'letter-a' }),
+    );
+    expect(routeKey({ name: 'doodle' })).toBe('doodle');
   });
 });

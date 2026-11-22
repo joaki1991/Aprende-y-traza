@@ -463,3 +463,88 @@ La puntuación es `0.45 × cobertura + 0.35 × precisión + 0.20 × dirección`.
 - El recorrido inverso se rechaza con `backwards` en todos los bucles.
 - No se debilitan la cobertura, la precisión ni los umbrales; solo se corrige el cálculo.
 - Los trazos abiertos siguen usando la misma fórmula sin desenvolverse.
+
+---
+
+## ADR-027 — Progreso v2 con migración al leer, sin tocar `DB_VERSION`
+
+**Fecha:** 2026-11-21 · **Estado:** aceptada
+
+**Contexto:** el Sprint 3 necesita guardar composiciones (dibujos coloreados y pizarra libre), pero las instalaciones existentes ya tienen un documento con `schemaVersion: 1` y no se puede perder el progreso de la niña. Cambiar la base de IndexedDB no es necesario: el store `progress` guarda un único documento validado en JavaScript.
+
+**Decisión:** subir `PROGRESS_SCHEMA_VERSION` a 2 y migrar el documento al leerlo. La migración añade `artworks: {}`, crea una composición vacía para cada ficha con `starsEarned >= 1`, ajusta `stars` al número de fichas completadas si el valor antiguo era menor y conserva el resto de campos. Es idempotente y no destructiva. `DB_VERSION` sigue en 1. Las escrituras pasan por una cola para que dos guardados concurrentes no se pisen.
+
+**Consecuencias:**
+
+- Una instalación anterior sigue abriendo y conserva estrellas, intentos y precisión.
+- Completar una ficha antes del Sprint 3 desbloquea su lámina al actualizar.
+- Los datos corruptos o de una versión desconocida siguen cayendo en un estado vacío seguro.
+- Cualquier cambio futuro del documento debe subir `PROGRESS_SCHEMA_VERSION` y añadir su migración; solo los cambios de stores o keyPaths suben `DB_VERSION`.
+
+---
+
+## ADR-028 — Láminas SVG propias organizadas por regiones
+
+**Fecha:** 2026-11-21 · **Estado:** aceptada
+
+**Contexto:** colorear una imagen plana con un cubo de pintura no es posible sin máscaras ni segmentación. Se necesitan dibujos infantiles reales, sin recursos remotos ni bitmaps, que funcionen offline y permitan rellenar zonas independientes.
+
+**Decisión:** dibujar 37 láminas propias como datos SVG en TypeScript (`artworks/drawings/`). Cada lámina usa `viewBox` de 400 × 400, fondo transparente, trazo oscuro `#4a3a48` y regiones cerradas con `id` estable. Los constructores (`ellipsePath`, `ringPath`, `starPath`, `heartPath`…) generan paths cerrados y legibles. Las caritas y adornos van en `details`, separados de las regiones rellenables. Mayúscula y minúscula comparten lámina (`letter-a`); la Ñ usa `letter-enye`.
+
+**Consecuencias:**
+
+- El cubo solo cambia `fills[regionId]`; no hay máscaras ni efecto sobre regiones vecinas.
+- No se descargan imágenes, no hay placeholders y el paquete funciona offline.
+- Las láminas se pueden probar sin DOM (ids únicos, 37 totales, paths cerrados y mapeo desde el catálogo educativo).
+- Añadir una lámina es añadir datos, no una pantalla nueva.
+
+---
+
+## ADR-029 — Composición vectorial con capas fijas
+
+**Fecha:** 2026-11-21 · **Estado:** aceptada
+
+**Contexto:** la pizarra mezcla rellenos por región, trazos libres y pegatinas. Guardar capturas del lienzo en cada movimiento sería pesado y perdería calidad al redimensionar. Además, los contornos deben quedar siempre visibles para que el resultado parezca un dibujo para colorear.
+
+**Decisión:** guardar solo datos vectoriales: `fills` por id de región, `strokes` con puntos normalizados y `widthRatio`, y `stickers` con centro normalizado y escala. Renderizar en capas fijas de abajo a arriba: rellenos SVG, canvas de tinta, contornos SVG y pegatinas. El autoguardado agrupa cambios con 650 ms de retardo y fuerza el guardado al ocultar la pestaña o desmontar; el historial de deshacer se limita a 30 pasos.
+
+**Consecuencias:**
+
+- La composición ocupa poco y sobrevive a recargas y cambios de tamaño sin pixelarse.
+- Los contornos no se pueden tapar con el cubo y las pegatinas siempre quedan encima.
+- Nunca se guardan bitmaps ni data URLs del canvas.
+- Los límites de 400 trazos y 60 pegatinas protegen el almacenamiento y el rendimiento.
+
+---
+
+## ADR-030 — Pegatinas interactivas, no decorativas
+
+**Fecha:** 2026-11-21 · **Estado:** aceptada
+
+**Contexto:** el sprint pide que las pegatinas desbloqueadas se puedan colocar, mover, redimensionar y quitar dentro de la pizarra, y que su estado sobreviva al cierre. La galería de Recompensas ya usa las mismas piezas SVG.
+
+**Decisión:** modelar cada colocación como `PlacedSticker { id, kind, x, y, scale }`, con `x`/`y` normalizados respecto al tablero y `scale` relativo al ancho. La capa usa Pointer Events para seleccionar y arrastrar; el tamaño se cambia con botones grandes `-` y `+` (0,1 a 0,45); se elimina con un botón grande. `StickerTray` solo muestra las pegatinas desbloqueadas por estrellas y reutiliza `StickerArt`.
+
+**Consecuencias:**
+
+- Se pueden colocar varias pegatinas del mismo tipo sin duplicar el catálogo.
+- La interacción es táctil y no depende de controles diminutos ni de gestos de pinza.
+- Posición y tamaño se recuperan al reabrir la composición.
+- El catálogo, los costes y las reglas de estrellas existentes no cambian.
+
+---
+
+## ADR-031 — Una sola pizarra para dibujo libre y colorear
+
+**Fecha:** 2026-11-21 · **Estado:** aceptada
+
+**Contexto:** había una pizarra libre con su propio canvas (`DoodleCanvas`) y el modo colorear necesitaba casi lo mismo: tinta, colores, grosores, deshacer y limpiar. Mantener dos pantallas duplicaría estado y autoguardado, y aumentaría el riesgo de que una se quedara atrás.
+
+**Decisión:** retirar `DoodleCanvas` y unificar todo en `ArtworkBoard` con `InkCanvas` como capa de tinta. Sin `template` es la pizarra libre (`playground`); con `template` es una lámina del catálogo y aparecen el cubo de relleno y los contornos. `DoodleScreen` resuelve carga, error, bloqueo y monta la pizarra; la ruta `#/pizarra/dibujo/:id` selecciona la lámina.
+
+**Consecuencias:**
+
+- Un único ciclo de autoguardado, deshacer y herramientas para los dos modos.
+- La pizarra libre conserva su comportamiento y ahora también admite pegatinas y persiste entre sesiones.
+- El modo colorear añade relleno por región sin duplicar el motor de dibujo.
+- Se elimina código y superficie de pruebas; no se añade ninguna librería.

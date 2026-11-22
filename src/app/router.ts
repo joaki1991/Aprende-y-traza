@@ -12,6 +12,7 @@ export type AppRoute =
   | { name: 'lesson'; packId: string }
   | { name: 'trace'; packId: string; characterId: string }
   | { name: 'doodle' }
+  | { name: 'coloring'; drawingId: string }
   | { name: 'progress' }
   | { name: 'rewards' }
   | { name: 'notFound' };
@@ -30,6 +31,11 @@ export function lessonHref(packId: string): string {
 
 export function characterHref(packId: string, characterId: string): string {
   return `${lessonHref(packId)}/${encodeURIComponent(characterId)}`;
+}
+
+/** Abre la pizarra con la plantilla de un dibujo desbloqueado. */
+export function drawingHref(drawingId: string): string {
+  return `${ROUTES.doodle}/dibujo/${encodeURIComponent(drawingId)}`;
 }
 
 /** Convierte un hash (`#/pizarra`) en una ruta tipada. */
@@ -56,6 +62,9 @@ export function parseRoute(hash: string): AppRoute {
       }
       return { name: 'lesson', packId: decodeURIComponent(second) };
     case 'pizarra':
+      if (second === 'dibujo' && third) {
+        return { name: 'coloring', drawingId: decodeURIComponent(third) };
+      }
       return { name: 'doodle' };
     case 'progreso':
       return { name: 'progress' };
@@ -73,6 +82,9 @@ export function routeKey(route: AppRoute): string {
   }
   if (route.name === 'trace') {
     return `trace:${route.packId}:${route.characterId}`;
+  }
+  if (route.name === 'coloring') {
+    return `coloring:${route.drawingId}`;
   }
   return route.name;
 }

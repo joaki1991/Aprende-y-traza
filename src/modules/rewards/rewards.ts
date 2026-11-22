@@ -54,3 +54,8 @@ export const REWARD_STICKERS: readonly RewardSticker[] = [
 export function isStickerUnlocked(sticker: RewardSticker, stars: number): boolean {
   return stars >= sticker.starsRequired;
 }
+
+/** Valida un identificador de pegatina al leer datos persistidos. */
+export function isStickerKind(value: unknown): value is StickerKind {
+  return typeof value === 'string' && REWARD_STICKERS.some((sticker) => sticker.id === value);
+}

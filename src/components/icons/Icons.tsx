@@ -134,3 +134,40 @@ export function HomeIcon(props: IconProps) {
     </IconBase>
   );
 }
+
+export function BucketIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M6.2 10.8 12.8 4.2l6.4 6.4-5.3 5.3a2.4 2.4 0 0 1-3.4 0l-4.3-4.3a1.3 1.3 0 0 1 0-1.8Z" />
+      <path d="m8.9 8.1 6.4 6.4" />
+      <path d="M19.6 14.4c.9 1.3 1.4 2.3 1.4 3a1.4 1.4 0 0 1-2.8 0c0-.7.5-1.7 1.4-3Z" />
+    </IconBase>
+  );
+}
+
+export function StickerIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M12 3.4l2.5 5.1 5.6.8-4.1 4 1 5.6-5-2.6-5 2.6 1-5.6-4.1-4 5.6-.8L12 3.4Z" />
+      <circle cx="9.9" cy="10.7" r="0.9" fill="currentColor" stroke="none" />
+      <circle cx="14.1" cy="10.7" r="0.9" fill="currentColor" stroke="none" />
+      <path d="M9.9 13.1c1.2 1 3 1 4.2 0" />
+    </IconBase>
+  );
+}
+
+export function PlusIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M12 5v14M5 12h14" />
+    </IconBase>
+  );
+}
+
+export function MinusIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M5 12h14" />
+    </IconBase>
+  );
+}

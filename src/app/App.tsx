@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { getDrawing } from '@/modules/artworks/drawings';
 import { getLessonCharacter, getLessonPack } from '@/modules/lessons/content';
 import { AppShell } from '@/components/layout/AppShell';
 import { HomeScreen } from '@/modules/home/HomeScreen';
@@ -34,10 +35,14 @@ function pageTitle(route: AppRoute): string {
     }
     case 'doodle':
       return `Pizarra mágica · ${APP_NAME}`;
+    case 'coloring': {
+      const drawing = getDrawing(route.drawingId);
+      return drawing ? `Colorear ${drawing.name} · ${APP_NAME}` : `Colorear · ${APP_NAME}`;
+    }
     case 'progress':
       return `Mis estrellas · ${APP_NAME}`;
     case 'rewards':
-      return `Sorpresas · ${APP_NAME}`;
+      return `Recompensas · ${APP_NAME}`;
     case 'notFound':
       return `¡Ups! · ${APP_NAME}`;
   }
@@ -55,6 +60,8 @@ function screenForRoute(route: AppRoute) {
       return <TraceScreen packId={route.packId} characterId={route.characterId} />;
     case 'doodle':
       return <DoodleScreen />;
+    case 'coloring':
+      return <DoodleScreen drawingId={route.drawingId} />;
     case 'progress':
       return <ProgressScreen />;
     case 'rewards':

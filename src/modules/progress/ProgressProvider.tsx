@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import type { ArtworkState } from '@/modules/artworks/artwork.types';
 import {
   loadProgress,
   recordPractice as recordPracticeInStorage,
+  saveArtwork as saveArtworkInStorage,
   type PracticeRecordInput,
+  type PracticeRecordSummary,
 } from './progress.repository';
 import { createEmptyProgress, type ProgressSnapshot } from './progress.types';
 import { summarizeProgress } from './progress.utils';
@@ -22,15 +25,35 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     setReloadToken((token) => token + 1);
   }, []);
 
-  const recordPractice = useCallback(async (input: PracticeRecordInput) => {
-    try {
-      const snapshot = await recordPracticeInStorage(input);
-      setProgress(snapshot);
-      setStatus('ready');
-    } catch (error) {
-      console.error('[Aprende y Traza] No se pudo guardar la práctica.', error);
-    }
-  }, []);
+  const recordPractice = useCallback(
+    async (input: PracticeRecordInput): Promise<PracticeRecordSummary | null> => {
+      try {
+        const summary = await recordPracticeInStorage(input);
+        setProgress(summary.snapshot);
+        setStatus('ready');
+        return summary;
+      } catch (error) {
+        console.error('[Aprende y Traza] No se pudo guardar la práctica.', error);
+        return null;
+      }
+    },
+    [],
+  );
+
+  const saveArtwork = useCallback(
+    async (artwork: ArtworkState): Promise<ProgressSnapshot | null> => {
+      try {
+        const snapshot = await saveArtworkInStorage(artwork);
+        setProgress(snapshot);
+        setStatus('ready');
+        return snapshot;
+      } catch (error) {
+        console.error('[Aprende y Traza] No se pudo guardar el dibujo.', error);
+        return null;
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     let active = true;
@@ -63,8 +86,9 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       status,
       refresh,
       recordPractice,
+      saveArtwork,
     }),
-    [progress, status, refresh, recordPractice],
+    [progress, status, refresh, recordPractice, saveArtwork],
   );
 
   return <ProgressContext.Provider value={value}>{children}</ProgressContext.Provider>;

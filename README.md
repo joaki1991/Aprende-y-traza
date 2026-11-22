@@ -2,22 +2,27 @@
 
 Aplicación educativa **kawaii** para que una niña de unos 4 años aprenda a trazar letras mayúsculas, minúsculas y números. Funciona como PWA instalable y está preparada para empaquetarse como app Android con Capacitor.
 
-> **Estado actual: Sprint 2 completado.** La app incluye el catálogo completo de **64 fichas** (27 mayúsculas, 27 minúsculas y 10 números), todas trazables con el mismo motor: guía SVG, tinta Canvas, validación de inicio/recorrido/dirección/orden, feedback amable y registro local. El Sprint 1.5 dejó la interfaz adaptada a vertical y horizontal, y la A mayúscula conserva exactamente la geometría aprobada en el Sprint 1. Los niveles progresivos, las estrellas definitivas y el sonido llegan en los siguientes sprints.
+> **Estado actual: Sprint 3 completado.** La app incluye el catálogo completo de **64 fichas** (27 mayúsculas, 27 minúsculas y 10 números), todas trazables con el mismo motor, y un sistema de recompensas con **37 láminas para colorear** asociadas a las letras y los números. Cada ficha completada por primera vez da una estrella; cada letra o número desbloquea su dibujo, que se colorea por regiones independientes en la pizarra y se decora con pegatinas interactivas. El Sprint 1.5 dejó la interfaz adaptada a vertical y horizontal, y la A mayúscula conserva exactamente la geometría aprobada en el Sprint 1. Los niveles progresivos, el sonido y el panel adulto llegan en los siguientes sprints.
 
 ---
 
 ## Qué incluye esta versión
 
-- Interfaz completa y navegable: portada, selección de contenidos, vista previa de paquetes, pizarra libre, progreso y recompensas.
+- Interfaz completa y navegable: portada, selección de contenidos, vista previa de paquetes, pizarra, progreso y recompensas.
 - Identidad kawaii pastel con tipografías locales, mascota SVG y pegatinas SVG.
 - Ejercicio de trazado para las 64 fichas: 27 mayúsculas, 27 minúsculas y 10 números, con trazos ordenados, flecha, guía punteada, punto de inicio y celebración con Mochi.
 - Motor geométrico propio que valida inicio, cobertura, desviación, dirección, final y orden, y rechaza garabatos. Admite líneas, curvas y arcos SVG; los puntos de i/j se validan como toque independiente.
-- Pizarra táctil sobre Canvas con Pointer Events, captura de puntero, DPR y `ResizeObserver`.
-- Progreso y ajustes en IndexedDB, sin registro ni datos personales; el ejercicio guarda intentos, rondas completadas, precisión y fecha.
+- Sistema de estrellas idempotente: una estrella por la primera finalización de cada ficha, sin duplicados al repetir y sin premio si el intento queda incompleto.
+- 37 dibujos originales en SVG con regiones cerradas e identificadores estables: 27 letras (mayúscula y minúscula comparten lámina) y 10 números.
+- Celebración al desbloquear un dibujo, con acceso directo a colorearlo o a seguir aprendiendo.
+- Galería «Recompensas» con pestañas Dibujos y Pegatinas: siluetas para los bloqueados, previsualización y botón Continuar para los empezados.
+- Pizarra unificada: dibujo libre y modo colorear con cubo de relleno por región, pincel, 17 colores, tres grosores, deshacer, limpiar con confirmación y autoguardado vectorial.
+- Pegatinas interactivas sobre la pizarra: añadir varias, arrastrar, cambiar tamaño, quitar y conservar posición y tamaño al reabrir.
+- Progreso y composiciones en IndexedDB, sin registro ni datos personales; el ejercicio guarda intentos, rondas completadas, precisión y fecha, y la pizarra guarda colores, trazos y pegatinas.
 - PWA con manifest, iconos, service worker y funcionamiento offline.
 - Proyecto Android generado con Capacitor, orientación libre, iconos y splash propios.
 - Diseño adaptable a vertical y horizontal (móvil, tablet y ventana de escritorio) con safe areas y sin scroll horizontal.
-- 113 pruebas automatizadas, TypeScript estricto, ESLint y build de producción verificado.
+- 144 pruebas automatizadas, TypeScript estricto, ESLint y build de producción verificado.
 
 ## Requisitos
 
@@ -118,15 +123,16 @@ Notas:
 │   ├── assets/fonts/        Fredoka y Nunito variables (WOFF2 locales)
 │   ├── components/          UI reutilizable: layout, iconos, mascota, botones
 │   ├── modules/
+│   │   ├── artworks/        Pizarra, láminas SVG, rellenos y pegatinas
 │   │   ├── home/            Pantalla principal
 │   │   ├── learning/        Selección y vista previa de paquetes
 │   │   ├── lessons/         Modelo, contenido y trazos SVG (`traces/`)
 │   │   ├── native/          Integración Android (botón Atrás)
-│   │   ├── progress/        Progreso, resumen y provider
+│   │   ├── progress/        Progreso, resumen, estrellas y provider
 │   │   ├── pwa/             Registro del service worker
-│   │   ├── rewards/         Catálogo y arte de pegatinas
+│   │   ├── rewards/         Catálogo de pegatinas y galería de recompensas
 │   │   ├── storage/         Capa mínima sobre IndexedDB
-│   │   └── tracing/         Pizarra, motor geométrico y pantalla de trazado
+│   │   └── tracing/         Motor geométrico, pantalla de trazado y lápiz táctil
 │   ├── styles/              Tokens, base global y fuentes
 │   └── test/                Configuración de pruebas
 ├── AGENTS.md                Reglas para agentes y colaboradores
@@ -160,6 +166,19 @@ Para añadir un alfabeto nuevo (por ejemplo, cursiva o pictogramas):
 3. Añade sus `CharacterTrace` en `traces/` y regístralos en `traces/index.ts`.
 4. Ejecuta las pruebas y actualiza `docs/architecture.md` si cambia el modelo.
 
+## Recompensas, dibujos y pizarra
+
+- Cada primera finalización de una ficha concede **1 estrella**. Repetir una ficha ya completada no suma; un intento incompleto tampoco. El contador aparece en la portada y en Recompensas.
+- Las estrellas no se gastan: desbloquean pegatinas por hitos (`mochi` 0, `arcoíris` 1, `estrella` 3, `flor` 5, `cupcake` 8, `corona` 12).
+- Cada letra y cada número tienen una lámina propia; mayúscula y minúscula comparten dibujo (A y a desbloquean `letter-a`; la Ñ usa `letter-enye`). En total hay **37 dibujos**: 27 de letras y 10 de números.
+- El catálogo vive en `src/modules/artworks/drawings/`: `letterDrawings.ts`, `numberDrawings.ts` y `shapes.ts`. Cada lámina usa un `viewBox` de `0 0 400 400`, fondo transparente, contornos oscuros y regiones SVG cerradas con `id` estable.
+- La pizarra es una sola pantalla (`ArtworkBoard`). En modo libre guarda la composición `playground`; en modo colorear carga la plantilla de la ruta `#/pizarra/dibujo/<id>`.
+- Capas de abajo a arriba: rellenos SVG, tinta libre, contornos SVG y pegatinas. Así el contorno nunca se tapa y las pegatinas siempre quedan encima.
+- El autoguardado es vectorial, con 650 ms de retardo: colores por región, trazos normalizados y pegatinas con posición y tamaño. No se guardan mapas de bits ni capturas del lienzo.
+- La galería de Recompensas muestra los bloqueados en silueta, abre los desbloqueados y permite continuar los empezados con su previsualización.
+
+Rutas útiles: `#/recompensas`, `#/pizarra` y `#/pizarra/dibujo/letter-a`.
+
 ## Orientación y diseño adaptable
 
 - **Vertical:** columna centrada, botones grandes y texto mínimo; es la distribución prioritaria en móvil.
@@ -188,12 +207,13 @@ npm run test:run
 npm run build
 ```
 
-Resultados de referencia del Sprint 2: [`docs/sprint-2.md`](docs/sprint-2.md). El Sprint 1.5 queda documentado en [`docs/sprint-1.5.md`](docs/sprint-1.5.md), el Sprint 1 en [`docs/sprint-1.md`](docs/sprint-1.md) y el Sprint 0 en [`docs/sprint-0.md`](docs/sprint-0.md).
+Resultados de referencia del Sprint 3: [`docs/sprint-3.md`](docs/sprint-3.md). El Sprint 2 queda documentado en [`docs/sprint-2.md`](docs/sprint-2.md), el Sprint 1.5 en [`docs/sprint-1.5.md`](docs/sprint-1.5.md), el Sprint 1 en [`docs/sprint-1.md`](docs/sprint-1.md) y el Sprint 0 en [`docs/sprint-0.md`](docs/sprint-0.md).
 
 ## Documentación
 
 - [`docs/architecture.md`](docs/architecture.md): arquitectura, capas, flujos y guías de extensión.
 - [`docs/technical-decisions.md`](docs/technical-decisions.md): registro de decisiones técnicas (ADR).
+- [`docs/sprint-3.md`](docs/sprint-3.md): recompensas, 37 láminas, pizarra de relleno y pegatinas.
 - [`docs/sprint-2.md`](docs/sprint-2.md): catálogo completo, geometrías, arcos, puntos y verificación.
 - [`docs/sprint-1.5.md`](docs/sprint-1.5.md): orientación adaptable, distribuciones y verificación.
 - [`docs/sprint-1.md`](docs/sprint-1.md): motor de trazado, algoritmo de validación, pruebas y limitaciones.

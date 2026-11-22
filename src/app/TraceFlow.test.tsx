@@ -1,11 +1,11 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CharacterTrace, TracePoint } from '@/modules/lessons/lesson.types';
 import { getCharacterTrace } from '@/modules/lessons/traces';
 import { getLessonPack } from '@/modules/lessons/content';
 import { samplePath } from '@/modules/tracing/traceGeometry';
 import { ProgressProvider } from '@/modules/progress/ProgressProvider';
-import { loadProgress } from '@/modules/progress/progress.repository';
+import { loadProgress, recordPractice } from '@/modules/progress/progress.repository';
 import { DB_NAME, closeDatabase } from '@/modules/storage/db';
 import { triggerResizeObservers } from '@/test/resizeObserver';
 import { App } from './App';
@@ -266,6 +266,17 @@ describe('flujo de trazado de la A', () => {
     expect(screen.getAllByText(/la a está preciosa/i).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /otra vez/i })).toBeInTheDocument();
 
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByRole('heading', { name: '¡Muy bien!' })).toBeInTheDocument();
+    expect(within(dialog).getByText(/has conseguido un nuevo dibujo/i)).toBeInTheDocument();
+    expect(within(dialog).getByRole('link', { name: /quiero colorearlo/i })).toHaveAttribute(
+      'href',
+      '#/pizarra/dibujo/letter-a',
+    );
+
+    fireEvent.click(within(dialog).getByRole('button', { name: /seguir aprendiendo/i }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
     await waitFor(async () => {
       const progress = await loadProgress();
       const character = progress.characters['upper-a'];
@@ -275,6 +286,9 @@ describe('flujo de trazado de la A', () => {
       expect(character?.lastResult).toBe('completed');
       expect(character?.bestAccuracy).toBeGreaterThan(0.5);
       expect(character?.packId).toBe('mayusculas');
+      expect(character?.starsEarned).toBe(1);
+      expect(progress.stars).toBe(1);
+      expect(progress.artworks['letter-a']).toBeDefined();
     });
   });
 
@@ -439,5 +453,65 @@ describe('flujo de trazado de minúsculas y números', () => {
       expect(character?.completions).toBe(1);
       expect(character?.lastResult).toBe('completed');
     });
+  });
+});
+
+describe('recompensas al completar fichas', () => {
+  it('no celebra un dibujo repetido al completar la minúscula de la misma letra', async () => {
+    await recordPractice({
+      packId: 'mayusculas',
+      characterId: 'upper-a',
+      completed: true,
+      accuracy: 0.9,
+    });
+
+    renderAt('#/aprender/minusculas/lower-a');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'La a' })).toBeInTheDocument();
+    const canvas = screen.getByLabelText(/zona para trazar la letra a/i) as HTMLCanvasElement;
+
+    drawStroke(canvas, 0, canvasRect, 'lower-a');
+    expect(await screen.findByText(/baja una línea recta a la derecha/i)).toBeInTheDocument();
+    await waitForNextStroke();
+
+    drawStroke(canvas, 1, canvasRect, 'lower-a');
+    expect(await screen.findByRole('heading', { name: '¡Bravo!' })).toBeInTheDocument();
+
+    await act(async () => {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 120);
+      });
+    });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    const progress = await loadProgress();
+    expect(progress.stars).toBe(2);
+    expect(progress.characters['lower-a']?.starsEarned).toBe(1);
+    expect(Object.keys(progress.artworks)).toEqual(['letter-a']);
+  });
+
+  it('abre la lámina desbloqueada en la pizarra para colorearla', async () => {
+    await recordPractice({
+      packId: 'numeros',
+      characterId: 'digit-0',
+      completed: true,
+      accuracy: 0.86,
+    });
+
+    renderAt('#/pizarra/dibujo/number-0');
+
+    expect(
+      await screen.findByRole('group', { name: /lámina para colorear: donut/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^pincel$/i })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: /^pintar$/i })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    expect(screen.getByRole('group', { name: /elige un color/i })).toBeInTheDocument();
+    expect(document.title).toBe('Colorear Donut · Aprende y Traza');
   });
 });

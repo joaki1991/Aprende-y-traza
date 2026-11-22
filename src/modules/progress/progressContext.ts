@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react';
+import type { ArtworkState } from '@/modules/artworks/artwork.types';
 import type { ProgressSnapshot } from './progress.types';
-import type { PracticeRecordInput } from './progress.repository';
+import type { PracticeRecordInput, PracticeRecordSummary } from './progress.repository';
 import type { ProgressSummary } from './progress.utils';
 
 export type ProgressStatus = 'loading' | 'ready' | 'error';
@@ -10,8 +11,10 @@ export interface ProgressContextValue {
   summary: ProgressSummary;
   status: ProgressStatus;
   refresh: () => void;
-  /** Guarda una ronda de práctica en IndexedDB y actualiza el contexto. */
-  recordPractice: (input: PracticeRecordInput) => Promise<void>;
+  /** Guarda una ronda de práctica y devuelve la recompensa obtenida. */
+  recordPractice: (input: PracticeRecordInput) => Promise<PracticeRecordSummary | null>;
+  /** Guarda una composición y actualiza el contexto. */
+  saveArtwork: (artwork: ArtworkState) => Promise<ProgressSnapshot | null>;
 }
 
 export const ProgressContext = createContext<ProgressContextValue | undefined>(undefined);

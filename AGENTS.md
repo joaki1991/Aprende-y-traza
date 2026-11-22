@@ -7,7 +7,7 @@ Guía para agentes de OpenCode y para cualquier persona que contribuya a **Apren
 - App educativa kawaii para una niña de ~4 años: trazar mayúsculas, minúsculas y números.
 - Interfaz en **español**; identificadores de código en **inglés**.
 - Prioridad absoluta: **móvil Android**, con diseño completo para vertical y horizontal, botones grandes, lectura mínima y uso con dedos pequeños.
-- Estado actual: **Sprint 2 completado**. El motor de trazado está implementado y las 64 fichas (27 mayúsculas, 27 minúsculas y 10 números) están registradas y son trazables. Toda la interfaz funciona en vertical y horizontal. No implementes niveles progresivos, estrellas definitivas, sonido ni funcionalidades de sprints futuros sin que se pida explícitamente.
+- Estado actual: **Sprint 3 completado**. El motor de trazado está implementado y las 64 fichas (27 mayúsculas, 27 minúsculas y 10 números) están registradas y son trazables. Toda la interfaz funciona en vertical y horizontal. El sistema de estrellas y la galería de Recompensas están activos, con 37 láminas SVG para colorear por regiones y pegatinas interactivas en la pizarra. No implementes niveles progresivos, sonido, panel adulto ni funcionalidades de sprints futuros sin que se pida explícitamente.
 
 ## 2. Reglas irrenunciables
 
@@ -43,6 +43,7 @@ app/ ──> modules/ ──> components/ + styles/
 - **`src/components/`**: UI reutilizable sin lógica de negocio (layout, iconos, mascota, botones, píldoras).
 - **`src/styles/`**: tokens, fuentes y estilos globales.
 - **`src/modules/storage/`**: única puerta a IndexedDB. Ningún componente debe abrir IndexedDB directamente.
+- **`src/modules/artworks/`**: pizarra, láminas SVG, rellenos y pegatinas. No debe abrir IndexedDB: usa `useProgress().saveArtwork`.
 - **`src/modules/native/`**: integraciones Capacitor aisladas.
 
 Reglas:
@@ -66,6 +67,15 @@ Reglas:
 - Para añadir un alfabeto, crea un paquete nuevo con su `scriptId`; no dupliques la estructura de pantallas.
 - Añade o actualiza pruebas de contenido al cambiar el catálogo (longitud, ids únicos, Ñ, palabras de ejemplo) y pruebas de integridad de los nuevos trazos.
 
+### Láminas para colorear
+
+- Catálogo único: `src/modules/artworks/drawings/`. Cada lámina es un `DrawingTemplate`.
+- Hay 37 láminas: 27 de letras (`letter-a`…`letter-z`, `letter-enye`) y 10 de números (`number-0`…`number-9`). Mayúscula y minúscula comparten lámina.
+- Cada lámina usa `viewBox="0 0 400 400"`, fondo transparente, trazo oscuro `#4a3a48` y regiones SVG cerradas con `id` estable (`body`, `wing`, `window`…).
+- Las regiones deben ser independientes: rellenar una no puede afectar a las vecinas. Los ojos, caritas y adornos van en `details` y no se rellenan con el cubo.
+- No uses emojis, iconos genéricos, imágenes remotas ni placeholders. Si falta una ilustración, deja constancia en el informe del sprint.
+- Al añadir o cambiar láminas, actualiza `drawings.test.ts` (37, ids únicos, regiones cerradas, mapeo desde el catálogo educativo).
+
 ## 6. Diseño visual y accesibilidad
 
 - Paleta, radios, sombras y tipografías: `src/styles/tokens.css`. No inventes colores sueltos en componentes; si hace falta un color nuevo, añádelo como token o variable local documentada.
@@ -79,7 +89,7 @@ Reglas:
 
 ## 7. Canvas y trazado
 
-La pizarra libre (`src/modules/tracing/DoodleCanvas.tsx`) y el ejercicio educativo (`TraceCanvas.tsx`) comparten las reglas técnicas del motor.
+La pizarra (`src/modules/artworks/ArtworkBoard.tsx`), su lápiz táctil (`src/modules/tracing/InkCanvas.tsx`) y el ejercicio educativo (`TraceCanvas.tsx`) comparten las reglas técnicas del motor.
 
 - Usa **Pointer Events** (`pointerdown`, `pointermove`, `pointerup`, `pointercancel`) y captura del puntero.
 - Mantén las coordenadas **normalizadas** en el modelo: 0–1 en la pizarra libre y coordenadas del `viewBox` en el ejercicio educativo, para que el redimensionado no deforme el dibujo.
@@ -88,6 +98,17 @@ La pizarra libre (`src/modules/tracing/DoodleCanvas.tsx`) y el ejercicio educati
 - `touch-action: none`, `user-select: none` y prevención de menú contextual dentro del lienzo.
 - No repintes todo el lienzo en cada movimiento si puedes pintar solo el segmento nuevo.
 - No añadas una segunda librería de dibujo.
+
+### Pizarra y composiciones
+
+- `ArtworkBoard` sirve para dibujo libre y para colorear. Sin `template` es pizarra libre (`playground`); con `template` es una lámina del catálogo.
+- Capas de abajo a arriba: rellenos SVG → canvas de pincel → contornos SVG → pegatinas. No cambies ese orden: los contornos deben quedar visibles y las pegatinas siempre encima.
+- El relleno se aplica por `regionId` con un `Record<string, string>`; no pintes una imagen plana ni uses máscaras que afecten a regiones vecinas.
+- El pincel reutiliza `InkCanvas` y guarda trazos vectoriales con `widthRatio`; no persistas bitmaps.
+- El historial de deshacer vive en `useStoredArtwork` (30 pasos) y el autoguardado se agrupa con 650 ms de retardo.
+- Las pegatinas se guardan con `id`, `kind`, centro normalizado `x`/`y` y `scale` relativo al ancho. Se arrastran con Pointer Events y se redimensionan con botones grandes.
+- Límites defensivos: `MAX_ARTWORK_STROKES = 400` y `MAX_ARTWORK_STICKERS = 60`.
+- La paleta (`DOODLE_COLORS`) tiene 17 colores y `DOODLE_BRUSH_SIZES` tres grosores. Mantén botones táctiles grandes y el color seleccionado claramente marcado.
 
 El motor educativo vive en `src/modules/tracing/`:
 
@@ -107,11 +128,15 @@ Reglas para ampliar el motor:
 
 ## 8. Persistencia
 
-- IndexedDB: base `aprende-y-traza`, versión `1`, stores `progress` y `settings`.
-- Toda lectura/escritura pasa por `src/modules/storage/db.ts` y `progress.repository.ts`.
-- El ejercicio registra intentos, rondas completadas, mejor precisión, último resultado y fecha con `recordPractice()`. No otorga estrellas todavía.
+- IndexedDB: base `aprende-y-traza`, versión `1`, stores `progress` y `settings`. El esquema del **documento** de progreso va por `PROGRESS_SCHEMA_VERSION` (2); no confundas ambas versiones.
+- Toda lectura/escritura pasa por `src/modules/storage/db.ts` y `progress.repository.ts`. La pizarra usa `useProgress().saveArtwork`.
+- `ProgressSnapshot` v2 contiene `stars`, `characters`, `artworks` y `updatedAt`. La migración v1 → v2 se ejecuta al leer, es no destructiva y desbloquea las láminas de las fichas ya completadas.
+- El ejercicio registra intentos, rondas completadas, mejor precisión, último resultado y fecha con `recordPractice()`. Devuelve `{ snapshot, starEarned, newDrawingId }`.
+- La primera finalización de una ficha concede 1 estrella de forma idempotente; repetir o dejar el intento incompleto no suma. Las estrellas no se gastan.
+- `saveArtwork` valida el id: rechaza láminas del catálogo que aún no estén desbloqueadas y composiciones que no existan. La pizarra libre usa `playground`.
+- Las composiciones guardan `fills` por región, `strokes` normalizados y `stickers` con posición y tamaño. Nunca bitmaps.
 - Valida los datos al leer: si están corruptos o son de una versión desconocida, vuelve a un estado vacío en lugar de romper la app.
-- Si cambias el esquema, incrementa `DB_VERSION`, añade migración y prueba apertura desde una versión anterior.
+- Si cambias el esquema de IndexedDB, incrementa `DB_VERSION`; si cambias el documento de progreso, incrementa `PROGRESS_SCHEMA_VERSION`. Añade migración y prueba apertura desde una versión anterior.
 - No guardes nombres, edad, ubicación, identificadores de dispositivo ni nada personal.
 - No introduzcas `localStorage` para progreso; IndexedDB es la fuente de verdad.
 
@@ -182,9 +207,16 @@ Un commit debe poder explicarse solo. No mezcles refactors masivos con funcional
 | Cambiar la validación o tolerancias | `src/modules/tracing/traceValidation.ts` |
 | Cambiar la pantalla de trazado | `src/modules/tracing/TraceScreen.tsx` |
 | Cambiar el Canvas del ejercicio | `src/modules/tracing/TraceCanvas.tsx` |
+| Cambiar la pizarra o sus herramientas | `src/modules/artworks/ArtworkBoard.tsx` |
+| Cambiar el lápiz táctil | `src/modules/tracing/InkCanvas.tsx` |
+| Añadir o cambiar una lámina para colorear | `src/modules/artworks/drawings/` + `drawings/index.ts` |
+| Cambiar el relleno por regiones | `src/modules/artworks/DrawingLayers.tsx` |
+| Cambiar las pegatinas de la pizarra | `src/modules/artworks/StickerLayer.tsx` y `StickerTray.tsx` |
+| Cambiar el autoguardado o deshacer | `src/modules/artworks/useStoredArtwork.ts` |
 | Cambiar colores/tipografía | `src/styles/tokens.css` |
 | Añadir un componente compartido | `src/components/` |
 | Añadir una recompensa | `src/modules/rewards/rewards.ts` + `StickerArt.tsx` |
+| Cambiar la galería de recompensas | `src/modules/rewards/RewardsScreen.tsx` |
 | Cambiar el progreso | `src/modules/progress/*` y `storage/db.ts` |
 | Cambiar la PWA | `vite.config.ts` + `public/icons/` |
 | Cambiar Android | `capacitor.config.ts` + `android/app/src/main/` |

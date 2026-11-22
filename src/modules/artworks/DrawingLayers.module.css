@@ -1,0 +1,8 @@
+.region {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.region:focus-visible {
+  outline: none;
+}

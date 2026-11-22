@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_DOODLE_BRUSH,
+  DOODLE_BRUSH_SIZES,
   DOODLE_COLORS,
   appendDoodlePoint,
   doodleStrokeWidth,
@@ -47,9 +49,38 @@ describe('trazos del lienzo', () => {
     expect(doodleStrokeWidth({ ...stroke, widthRatio: 0.001 }, size)).toBe(3);
   });
 
-  it('define una paleta pastel válida y sin duplicados', () => {
-    expect(DOODLE_COLORS).toHaveLength(5);
+  it('define una paleta válida, sin duplicados y con los 17 colores pedidos', () => {
+    expect(DOODLE_COLORS).toHaveLength(17);
+    expect(new Set(DOODLE_COLORS.map((color) => color.id)).size).toBe(DOODLE_COLORS.length);
     expect(new Set(DOODLE_COLORS.map((color) => color.value)).size).toBe(DOODLE_COLORS.length);
     expect(DOODLE_COLORS.every((color) => /^#[0-9a-f]{6}$/i.test(color.value))).toBe(true);
+    expect(DOODLE_COLORS.map((color) => color.id)).toEqual(
+      expect.arrayContaining([
+        'rojo',
+        'rosa',
+        'rosa-claro',
+        'naranja',
+        'amarillo',
+        'verde-claro',
+        'verde-oscuro',
+        'azul-claro',
+        'azul-oscuro',
+        'turquesa',
+        'morado',
+        'lila',
+        'marron',
+        'beige',
+        'gris',
+        'negro',
+        'blanco',
+      ]),
+    );
+  });
+
+  it('ofrece tres grosores de pincel crecientes y un valor por defecto', () => {
+    expect(DOODLE_BRUSH_SIZES).toHaveLength(3);
+    const widths = DOODLE_BRUSH_SIZES.map((size) => size.value);
+    expect(widths).toEqual([...widths].sort((a, b) => a - b));
+    expect(DOODLE_BRUSH_SIZES.some((size) => size.value === DEFAULT_DOODLE_BRUSH)).toBe(true);
   });
 });

@@ -12,7 +12,8 @@ Leyenda: ✅ completado · 🚧 en curso · ⏳ pendiente
 | 1 | Motor de trazado educativo y ficha de la A | ✅ |
 | 1.5 | Orientación vertical y horizontal en todas las pantallas | ✅ |
 | 2 | Catálogo completo: 27 mayúsculas, 27 minúsculas y 10 números | ✅ |
-| 3 | Flujo de lecciones y evaluación | ⏳ |
+| 3 | Recompensas, 37 dibujos para colorear y pegatinas en la pizarra | ✅ |
+| 3.5 | Flujo de lecciones y evaluación | ⏳ |
 | 4 | Sistema visual definitivo y revisión pedagógica | ⏳ |
 | 5 | Progreso detallado y persistencia avanzada | ⏳ |
 | 6 | Recompensas y motivación | ⏳ |
@@ -121,23 +122,48 @@ Leyenda: ✅ completado · 🚧 en curso · ⏳ pendiente
 
 ---
 
-## Sprint 3 — Flujo de lecciones y evaluación ⏳
+## Sprint 3 — Recompensas, dibujos para colorear y pegatinas ✅
 
-**Objetivo:** convertir el motor en un juego guiado por pasos.
+**Objetivo:** ampliar el sistema de recompensas para que completar una ficha desbloquee un dibujo coloreable y para que las pegatinas se puedan usar dentro de la pizarra.
+
+**Entregables:**
+
+- Modelo de progreso v2 con `stars`, `characters` y `artworks`; migración no destructiva v1 → v2 al leer.
+- Estrella idempotente por la primera finalización de cada ficha, sin premio al repetir ni al dejar el ejercicio incompleto.
+- Catálogo de 37 láminas SVG originales (`letter-a`…`letter-z`, `letter-enye`, `number-0`…`number-9`), con mayúscula y minúscula compartiendo dibujo.
+- Celebración de dibujo nuevo con «¡Quiero colorearlo!» y «Seguir aprendiendo».
+- Sección «Sorpresas» renombrada a «Recompensas», con pestañas Dibujos y Pegatinas y el mismo diseño de tarjeta.
+- Galería con siluetas para los bloqueados, previsualización de los coloreados y botón Continuar para los empezados.
+- Pizarra única `ArtworkBoard` para dibujo libre y colorear, con relleno por región independiente, pincel, 17 colores, tres grosores, deshacer, limpiar con confirmación y autoguardado vectorial.
+- Pegatinas interactivas sobre la composición: varias a la vez, arrastre, tamaño con botones grandes, eliminación y persistencia de posición y tamaño.
+- Composiciones guardadas en IndexedDB (`letter-*`, `number-*` y `playground`) sin mapas de bits.
+- Pruebas de progreso, migración, dibujos, render de recompensas y flujo de celebración; 144 pruebas en total.
+- `docs/sprint-3.md`, ADR nuevos, arquitectura, README y roadmap actualizados.
+
+**Criterio de aceptación:** una ficha completada da una estrella y desbloquea una sola lámina; repetir no duplica ni repite la celebración; la galería distingue bloqueado, desbloqueado y coloreado; el relleno de una región no afecta a las vecinas; las pegatinas se colocan, mueven, redimensionan, eliminan y sobreviven a la recarga; todo funciona offline y en vertical y horizontal.
+
+**Fuera de alcance:** sonidos, niveles progresivos, panel adulto, backend, cuentas, nube, tiendas, compras y publicidad.
+
+**Evidencia:** [`docs/sprint-3.md`](docs/sprint-3.md).
+
+---
+
+## Sprint 3.5 — Flujo de lecciones y evaluación ⏳
+
+**Objetivo:** convertir el motor en un juego guiado por pasos, una vez resueltas las recompensas.
 
 **Alcance:**
 
 - Selector de caracteres dentro de cada paquete, con estado practicado/pendiente.
 - Flujo: elegir carácter → ver demostración → trazar → celebrar → siguiente.
 - 3 intentos amables, sin cronómetros ni presión.
-- Estrellas por logro (máximo 3) y registro de intentos en IndexedDB.
-- Transiciones, progreso del paquete y pantalla de fin de ronda.
+- Progreso del paquete y pantalla de fin de ronda.
 - Persistencia tras cerrar la app y recuperación de la última lección.
 - Pruebas de flujo con Testing Library y de repositorio.
 
 **Criterio de aceptación:** completar una ronda de 5 letras, cerrar la app, reabrirla y conservar estrellas e intentos; ningún estado roto si se interrumpe a mitad.
 
-**Dependencias:** Sprint 2.
+**Dependencias:** Sprint 3.
 
 ---
 
@@ -181,17 +207,17 @@ Leyenda: ✅ completado · 🚧 en curso · ⏳ pendiente
 
 **Criterio de aceptación:** migración probada; ningún dato personal; reset claro y reversible solo con confirmación adulta.
 
-**Dependencias:** Sprint 3.
+**Dependencias:** Sprints 3 y 3.5.
 
 ---
 
 ## Sprint 6 — Recompensas y motivación ⏳
 
-**Objetivo:** mantener la motivación con recompensas simbólicas, sin azar ni presión.
+**Objetivo:** ampliar la motivación simbólica ya iniciada en el Sprint 3, sin azar ni presión.
 
 **Alcance:**
 
-- Catálogo de pegatinas ampliado y desbloqueo por hitos.
+- Catálogo de pegatinas ampliado y nuevos hitos de desbloqueo, conservando los actuales.
 - Álbum de pegatinas con animación de desbloqueo.
 - Recompensas por constancia, no por velocidad.
 - Mascota Mochi con reacciones y frases cortas.
@@ -200,7 +226,7 @@ Leyenda: ✅ completado · 🚧 en curso · ⏳ pendiente
 
 **Criterio de aceptación:** todas las recompensas se obtienen jugando; no hay forma de comprar ni de perderlas; el álbum funciona offline.
 
-**Dependencias:** Sprint 5.
+**Dependencias:** Sprints 3 y 5.
 
 ---
 

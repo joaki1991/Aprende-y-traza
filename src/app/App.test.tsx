@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ProgressProvider } from '@/modules/progress/ProgressProvider';
 import { App } from './App';
@@ -41,7 +41,7 @@ describe('App', () => {
       'href',
       '#/progreso',
     );
-    expect(screen.getByRole('link', { name: /sorpresas/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /recompensas/i })).toHaveAttribute(
       'href',
       '#/recompensas',
     );
@@ -107,6 +107,30 @@ describe('App', () => {
     expect(document.title).toBe('Trazar el 8 · Aprende y Traza');
   });
 
+  it('abre la pizarra libre sin plantilla', async () => {
+    renderAt('#/pizarra');
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Pizarra mágica' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('group', { name: /pizarra libre para dibujar/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: /elige un color/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^deshacer$/i })).toBeDisabled();
+  });
+
+  it('avisa cuando una lámina todavía está bloqueada', async () => {
+    renderAt('#/pizarra/dibujo/letter-a');
+
+    expect(
+      await screen.findByRole('heading', { name: /este dibujo todavía está guardado/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /ver mis recompensas/i })).toHaveAttribute(
+      'href',
+      '#/recompensas',
+    );
+    expect(document.title).toBe('Colorear Avión · Aprende y Traza');
+  });
+
   it('muestra una pantalla amable para rutas desconocidas', () => {
     renderAt('#/no-existe');
 
@@ -129,7 +153,7 @@ describe('App', () => {
       'href',
       '#/progreso',
     );
-    expect(screen.getByRole('link', { name: /sorpresas/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /recompensas/i })).toHaveAttribute(
       'href',
       '#/recompensas',
     );
@@ -158,7 +182,25 @@ describe('App', () => {
     );
   });
 
-  it('mantiene el progreso y las sorpresas en viewport horizontal', async () => {
+  it('cambia entre dibujos y pegatinas en Recompensas', async () => {
+    renderAt('#/recompensas');
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Recompensas' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/completa una letra o un número/i)).toBeInTheDocument();
+
+    const drawingsTab = screen.getByRole('tab', { name: /dibujos/i });
+    const stickersTab = screen.getByRole('tab', { name: /pegatinas/i });
+    expect(drawingsTab).toHaveAttribute('aria-selected', 'true');
+
+    fireEvent.click(stickersTab);
+    expect(stickersTab).toHaveAttribute('aria-selected', 'true');
+    expect(drawingsTab).toHaveAttribute('aria-selected', 'false');
+    expect(screen.getByText(/las estrellas se consiguen al completar/i)).toBeInTheDocument();
+  });
+
+  it('mantiene el progreso y las recompensas en viewport horizontal', async () => {
     setViewport(640, 360);
     renderAt('#/progreso');
 
@@ -168,7 +210,8 @@ describe('App', () => {
     window.location.hash = '#/recompensas';
     window.dispatchEvent(new HashChangeEvent('hashchange'));
 
-    expect(await screen.findByRole('heading', { name: 'Sorpresas' })).toBeInTheDocument();
-    expect(screen.getByText('Tus pegatinas')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Recompensas' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /dibujos/i })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tabpanel')).toBeInTheDocument();
   });
 });
