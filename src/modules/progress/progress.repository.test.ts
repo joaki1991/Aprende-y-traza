@@ -375,6 +375,23 @@ describe('progress.repository', () => {
     expect(stored.stars).toBe(1);
   });
 
+  it('conserva rellenos de regiones que ya no existen en la lámina', async () => {
+    await completeA();
+
+    const updated = await saveArtwork({
+      ...createEmptyArtwork('letter-a'),
+      fills: { body: '#ff6fa5', 'region-antigua': '#6fc3ff' },
+    });
+
+    expect(updated.artworks['letter-a']?.fills).toEqual({
+      body: '#ff6fa5',
+      'region-antigua': '#6fc3ff',
+    });
+
+    const stored = await loadProgress();
+    expect(stored.artworks['letter-a']?.fills['region-antigua']).toBe('#6fc3ff');
+  });
+
   it('guarda la pizarra libre sin necesidad de desbloqueo', async () => {
     const updated = await saveArtwork({
       ...createEmptyArtwork(PLAYGROUND_ARTWORK_ID),

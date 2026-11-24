@@ -167,6 +167,22 @@ Leyenda: ✅ completado · 🚧 en curso · ⏳ pendiente
 
 ---
 
+## Mejora de ilustraciones del catálogo ✅
+
+**Objetivo:** elevar la calidad de las láminas para colorear sin cambiar el flujo ni la arquitectura, antes de abordar el sistema visual completo.
+
+**Entregables:**
+
+- Revisión de licencias de fuentes externas; descarte de repositorios sin licencia clara.
+- Once láminas sustituidas: cuatro de dominio público (G, J, P y V), cinco de Fluent UI Emoji (B, E, T, U e Y, licencia MIT) y dos redibujos propios (W y Ñ).
+- `docs/svg-sources.md` con autoría, licencia, URL y modificaciones de cada dibujo; aviso MIT en `licenses/`.
+- Prueba de compatibilidad: los rellenos de ids desaparecidos no se borran.
+- Pruebas, build, APK debug y revisión visual en navegador real.
+
+**Evidencia:** [`docs/sprint-4-ilustraciones.md`](docs/sprint-4-ilustraciones.md) y [`docs/svg-sources.md`](docs/svg-sources.md).
+
+---
+
 ## Sprint 4 — Sistema visual definitivo y revisión pedagógica ⏳
 
 **Objetivo:** pulir la experiencia infantil una vez que todo el catálogo ya es trazable y revisar la calidad pedagógica de las 64 fichas.

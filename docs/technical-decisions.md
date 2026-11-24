@@ -548,3 +548,40 @@ La puntuación es `0.45 × cobertura + 0.35 × precisión + 0.20 × dirección`.
 - La pizarra libre conserva su comportamiento y ahora también admite pegatinas y persiste entre sesiones.
 - El modo colorear añade relleno por región sin duplicar el motor de dibujo.
 - Se elimina código y superficie de pruebas; no se añade ninguna librería.
+
+---
+
+## ADR-032 — Ilustraciones externas solo con licencia verificable
+
+**Fecha:** 2026-11-23 · **Estado:** aceptada
+
+**Contexto:** algunas láminas dibujadas a mano se pueden mejorar con ilustraciones profesionales. El catálogo debe seguir siendo offline, vectorial, coloreable por regiones y con licencia que permita modificarlo y redistribuirlo.
+
+**Decisión:** reutilizar únicamente obras de dominio público / CC0 verificadas en los metadatos del propio SVG. Se integran cuatro láminas de lemmling procedentes de Openclipart (G, J, P y V) en `artworks/drawings/importedDrawings.ts`, convertidas con un script local: transformaciones aplanadas, geometría normalizada a 400 × 400, rellenos convertidos en regiones y detalles, contorno unificado y ids posicionales estables. El resto de las láminas se conserva. La procedencia y las modificaciones se documentan en `docs/svg-sources.md`.
+
+**Consecuencias:**
+
+- No se añade ninguna dependencia ni recurso remoto; la app sigue funcionando offline.
+- La licencia queda auditada y la atribución documentada, aunque CC0 no la exija.
+- Solo se sustituye una lámina cuando la ilustración coincide con su nombre y mejora la existente; se evita mezclar conceptos educativos.
+- Regenerar una lámina importada puede cambiar sus ids `part-NN`: los rellenos antiguos se conservan en IndexedDB, pero dejan de mostrarse hasta que se repinte esa lámina. El resto de composiciones no se ve afectado.
+- Cualquier fuente nueva debe acreditar licencia y añadirse a `docs/svg-sources.md` antes de integrarse.
+
+---
+
+## ADR-033 — Láminas Fluent UI Emoji (MIT) y redibujos del waffle y el ñandú
+
+**Fecha:** 2026-11-24 · **Estado:** aceptada
+
+**Contexto:** varias láminas del catálogo seguían sin ser legibles para una niña de 4 años (ballena, elefante, tortuga, unicornio, waffle y yoyó). Los candidatos de dominio público revisados eran siluetas, tenían muy pocas regiones o no mejoraban el dibujo existente. Se necesitaba una alternativa profesional, vectorial y compatible con el motor de regiones.
+
+**Decisión:** integrar cinco láminas de **Fluent UI Emoji** (Microsoft) en su variante Flat, con licencia **MIT**: ballena, elefante, tortuga, unicornio y yoyó. Se convierten con el mismo proceso que las láminas de Openclipart (geometría aplanada, normalizada a 400 × 400, regiones y detalles, contorno `#4a3a48`, ids `part-NN`). El waffle y el ñandú se redibujan a mano: el primero porque la versión de Fluent quedaba demasiado recargada de líneas en la pizarra, y el segundo porque no había una versión externa clara. El aviso de copyright y permiso MIT se guarda en `licenses/MIT-Fluent-Emoji.txt` y la procedencia se documenta en `docs/svg-sources.md`.
+
+**Consecuencias:**
+
+- Se mantienen el offline, la ausencia de dependencias nuevas y el formato vectorial.
+- La licencia MIT exige conservar el aviso de copyright y permiso; queda incluido en `licenses/` y referenciado desde la documentación.
+- Algunas láminas de Fluent tienen menos regiones que las dibujadas a mano (ballena: 3; tortuga: 4), pero son formas amplias y legibles. El número de regiones se documenta en el informe del sprint.
+- Las regiones que Fluent diseña como anillos o patrones pueden agrupar varios subcaminos; se conservan como una región para que el relleno sea coherente.
+- Los ids `part-NN` cambian respecto a las láminas anteriores; los rellenos antiguos se conservan en IndexedDB y dejan de mostrarse hasta que se repinte la lámina.
+

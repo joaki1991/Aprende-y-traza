@@ -172,7 +172,7 @@ El tamaño del tablero se deriva del alto real del viewport (`calc((100dvh - …
 El módulo `src/modules/artworks/` contiene la pizarra y todo lo que se guarda en una composición:
 
 - `artwork.types.ts`: `ArtworkState` con `fills` por región, `strokes` normalizados y `stickers`; límites `MAX_ARTWORK_STROKES = 400` y `MAX_ARTWORK_STICKERS = 60`; `PLAYGROUND_ARTWORK_ID = 'playground'` y `isArtworkColored`.
-- `drawings/`: catálogo de 37 láminas. `letterDrawings.ts` (27), `numberDrawings.ts` (10), `shapes.ts` (constructores SVG y tipos) e `index.ts` (`DRAWINGS`, `getDrawing`, `drawingIdForCharacter`).
+- `drawings/`: catálogo de 37 láminas. `letterDrawings.ts` (27), `numberDrawings.ts` (10), `shapes.ts` (constructores SVG y tipos), `importedDrawings.ts` (láminas externas de dominio público y MIT) e `index.ts` (`DRAWINGS`, `getDrawing`, `drawingIdForCharacter`).
 - `DrawingLayers.tsx`: capa de rellenos interactiva y capa de contornos. Cada región es un `<path>` cerrado con `data-region-id`; el cubo solo cambia el `fill` de la región tocada.
 - `StickerLayer.tsx`: pegatinas por encima de todo, con selección, arrastre por Pointer Events y tamaño relativo.
 - `StickerTray.tsx`: bandeja de pegatinas desbloqueadas por estrellas.
@@ -180,6 +180,15 @@ El módulo `src/modules/artworks/` contiene la pizarra y todo lo que se guarda e
 - `ArtworkBoard.tsx`: capas de abajo a arriba **rellenos SVG → `InkCanvas` → contornos SVG → pegatinas**; herramientas de pincel/cubo, grosores, paleta, deshacer, limpiar con confirmación y mensajes accesibles.
 
 Las composiciones se identifican por `artworkId`: `letter-a`…`letter-z`, `letter-enye`, `number-0`…`number-9` o `playground`. Mayúscula y minúscula comparten `letter-*`; la Ñ usa `letter-enye`. Este id es también la clave en `ProgressSnapshot.artworks`.
+
+Nueve letras usan ilustraciones externas en `importedDrawings.ts`: G, J, P y V
+de Openclipart (dominio público / CC0) y B, E, T, U e Y de Fluent UI Emoji
+(MIT). La W y la Ñ son redibujos propios en `letterDrawings.ts`. La procedencia,
+la licencia y las modificaciones de cada una se documentan en
+[`docs/svg-sources.md`](svg-sources.md); el aviso MIT vive en
+`licenses/MIT-Fluent-Emoji.txt`. Las láminas importadas conservan el mismo
+contrato: `viewBox` 400 × 400, regiones cerradas con id estable y detalles no
+coloreables.
 
 Flujo de una región:
 
@@ -352,7 +361,7 @@ El Sprint 9 (o el Sprint 2 si se amplía el catálogo) medirá memoria y fps en 
 
 ### Añadir o cambiar una lámina para colorear
 
-1. Crea un `DrawingTemplate` en `artworks/drawings/letterDrawings.ts` o `numberDrawings.ts`.
+1. Crea un `DrawingTemplate` en `artworks/drawings/letterDrawings.ts` o `numberDrawings.ts`. Si la lámina procede de una fuente externa, intégrala en `importedDrawings.ts` y documenta su licencia en `docs/svg-sources.md`.
 2. Usa `viewBox` `0 0 400 400`, fondo transparente y un `id` estable (`letter-x` o `number-x`).
 3. Define cada región como un path cerrado (`Z`) con `id` único dentro de la lámina; los adornos van en `details`.
 4. Mantén el trazo oscuro `#4a3a48` y formas grandes, sin detalles pequeños.

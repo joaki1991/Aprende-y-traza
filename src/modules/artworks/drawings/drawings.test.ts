@@ -62,6 +62,27 @@ describe('catálogo de láminas', () => {
     expect(DRAWING_VIEW_BOX).toBe('0 0 400 400');
   });
 
+  it('mantiene las láminas importadas con varias regiones coloreables', () => {
+    for (const id of [
+      'letter-b',
+      'letter-e',
+      'letter-g',
+      'letter-j',
+      'letter-p',
+      'letter-t',
+      'letter-u',
+      'letter-v',
+      'letter-y',
+    ]) {
+      const drawing = getDrawing(id);
+      if (!drawing) {
+        throw new Error(`Falta la lámina importada ${id}`);
+      }
+      expect(drawing.regions.length).toBeGreaterThanOrEqual(3);
+      expect(drawing.regions.every((region) => region.id.startsWith('part-'))).toBe(true);
+    }
+  });
+
   it('descarta identificadores que no existen', () => {
     expect(getDrawing('letter-inventada')).toBeUndefined();
     expect(getDrawing(null)).toBeUndefined();
