@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ArrowRightIcon, PaletteIcon, StarIcon, UndoIcon } from '@/components/icons/Icons';
 import { Screen } from '@/components/layout/Screen';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
@@ -7,9 +8,11 @@ import { NotFoundScreen } from '@/app/NotFoundScreen';
 import { characterHref, drawingHref, lessonHref } from '@/app/router';
 import { DrawingArtwork } from '@/modules/artworks/DrawingLayers';
 import { drawingIdForCharacter, getDrawing } from '@/modules/artworks/drawings';
+import { useSoundEffects, useSpeech } from '@/modules/audio/audioContext';
 import { getLessonCharacter, getLessonPack } from '@/modules/lessons/content';
 import { hasCharacterTrace } from '@/modules/lessons/traces';
 import { useProgress } from '@/modules/progress/progressContext';
+import { traceCongratulation } from './traceNarration';
 import styles from './TraceCompleteScreen.module.css';
 
 interface TraceCompleteScreenProps {
@@ -27,14 +30,30 @@ interface TraceCompleteScreenProps {
  */
 export function TraceCompleteScreen({ packId, characterId }: TraceCompleteScreenProps) {
   const { progress, status } = useProgress();
+  const { speak, cancel } = useSpeech();
+  const { remainingMs } = useSoundEffects();
   const pack = getLessonPack(packId);
   const character = getLessonCharacter(packId, characterId);
+  const article: 'el' | 'la' = pack?.scriptId === 'digits' ? 'el' : 'la';
+  const congratulation = character ? traceCongratulation(character.glyph, article) : '';
+
+  useEffect(() => {
+    if (!congratulation) {
+      return;
+    }
+    // Espera a que termine la música de victoria para no pisarla.
+    const delay = Math.max(700, remainingMs() + 350);
+    const timer = window.setTimeout(() => speak(congratulation), delay);
+    return () => {
+      window.clearTimeout(timer);
+      cancel();
+    };
+  }, [congratulation, remainingMs, speak, cancel]);
 
   if (!pack || !character) {
     return <NotFoundScreen />;
   }
 
-  const article = pack.scriptId === 'digits' ? 'el' : 'la';
   const listBackLabel =
     pack.scriptId === 'digits' ? 'Volver a los números' : 'Volver a las letras';
   const drawingId = drawingIdForCharacter(pack.id, character.id);

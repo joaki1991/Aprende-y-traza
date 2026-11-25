@@ -8,8 +8,8 @@ import { loadMusicMuted, saveMusicMuted } from './musicPreferences';
  * cambiar de ruta no reinicia la canción.
  */
 
-/** Archivo local servido desde `public/audio/`. */
-export const MUSIC_SOURCE = `${import.meta.env.BASE_URL}audio/background-music.mp3`;
+/** Archivo local servido desde `public/audio/music/`. */
+export const MUSIC_SOURCE = `${import.meta.env.BASE_URL}audio/music/background-music.mp3`;
 
 /** Volumen moderado para una app infantil. */
 export const MUSIC_VOLUME = 0.24;

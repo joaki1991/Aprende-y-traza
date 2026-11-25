@@ -144,9 +144,9 @@ Resumen; el detalle está en [`technical-decisions.md`](technical-decisions.md).
 - **No existe motor de trazado educativo.** La pizarra libre valida Canvas, gestos y ciclo de vida, pero no evalúa letras.
 - **No hay fichas de lecciones ni flujo de práctica.** Las pantallas muestran el catálogo y un aviso de “muy pronto”.
 - **No se pueden ganar estrellas desde la interfaz.** El repositorio tiene `addStars`, pero nada lo llama todavía.
-- **No hay sonidos.** Los assets de audio se añadirán en el Sprint 7 y se incluirán en el precache.
+- **No había sonidos en el Sprint 0.** El Sprint 6 añadió la música ambiental y el Sprint 7 los efectos y la voz; sus preferencias usan `localStorage` (ver `docs/sprint-7.md`).
 - **No hay panel de adultos ni reset visible.** `resetProgress` existe en el repositorio, sin UI.
-- **El store `settings` está vacío.** Se reserva para volumen, silencio y accesibilidad.
+- **El store `settings` está vacío.** Se reservó para volumen, silencio y accesibilidad; las preferencias de audio acabaron en `localStorage` por ser síncronas y diminutas.
 - **No hay firma release ni publicación.** Solo APK debug.
 - **No hay pruebas en dispositivo real.** Pendiente para el Sprint 9 y recomendable antes.
 - **La internacionalización no está extraída.** Los textos están en los componentes, en español.

@@ -55,7 +55,7 @@ main.tsx
               ├── modules/progress (provider + repositorio)
               ├── modules/storage/db
               ├── modules/rewards
-              ├── modules/audio (música ambiental)
+              ├── modules/audio (música, efectos y voz)
               └── modules/tracing
 ```
 
@@ -248,7 +248,9 @@ Separación deliberada:
 
 ### Audio
 
-`modules/audio/` contiene el único reproductor de música ambiental de la app:
+`modules/audio/` reúne la música, los efectos y la voz. La música, los efectos y la voz tienen preferencias independientes y comparten un único proveedor por encima del router.
+
+**Música**
 
 - `musicPlayer.ts`: lógica sin React. Crea un solo `HTMLAudioElement` de forma diferida (`new Audio()`), lo configura en bucle con volumen `0.24`, gestiona los rechazos de `play()` y pausa/reanuda con `visibilitychange`.
 - `musicPreferences.ts`: guarda la preferencia de silencio en `localStorage` (`aprende-y-traza.music.muted`), con acceso defensivo si el navegador bloquea el almacenamiento.
@@ -256,9 +258,25 @@ Separación deliberada:
 - `AmbientMusicProvider.tsx`: monta el reproductor una sola vez por encima del router de rutas.
 - `MusicToggle.tsx`: botón fijo en la esquina superior derecha, con iconos de altavoz y altavoz silenciado, `aria-pressed` y etiqueta en español.
 
-El archivo musical vive en `public/audio/background-music.mp3` y se sirve con la app; el service worker lo precarga. Si el archivo falta, el reproductor marca `unavailable` y la app sigue funcionando. Las instrucciones para sustituirlo están en `public/audio/README.md`.
+El archivo musical vive en `public/audio/music/background-music.mp3` y se sirve con la app; el service worker lo precarga. Si el archivo falta, el reproductor marca `unavailable` y la app sigue funcionando. Las instrucciones para sustituirlo están en `public/audio/README.md`.
 
 La reproducción automática se intenta al arrancar. Si el navegador la bloquea, no se muestra ningún error: se registra un gesto real (`pointerdown` o `keydown`) y se reintenta. Silenciar pausa el mismo elemento y volver a activar lo reanuda en el mismo instante, sin reiniciar la canción. Al pasar a segundo plano se pausa y al volver se reanuda si la preferencia sigue activa.
+
+**Efectos**
+
+- `soundEffects.ts`: sintetiza cuatro patrones originales (`victory`, `star`, `unlock`, `step`) con osciladores y envolventes de Web Audio. No usa archivos ni muestras externas.
+- `soundPreferences.ts`: guarda `aprende-y-traza.effects.enabled` en `localStorage`.
+- El reproductor es único y encola los efectos: la victoria (0,86 s) no se solapa con la estrella ni con el desbloqueo. Los pasos cortos se descartan durante una celebración y nunca suenan en un trazo rechazado.
+- `AudioProvider.tsx` crea los reproductores de efectos y voz una sola vez. `audioContext.ts` expone `useSoundEffects` y `useSpeech` con `useSyncExternalStore`.
+
+**Voz**
+
+- `speech.ts`: envuelve `SpeechSynthesis` sin dependencias. Prefiere una voz `es-ES`, luego cualquier voz española y, si no existe, la predeterminada del sistema.
+- `speechPreferences.ts`: guarda `aprende-y-traza.speech.enabled` en `localStorage`.
+- Cancelar una locución antes de empezar otra impide solapamientos; una ventana de 3,5 s descarta la misma frase repetida para no saturar. Los errores de `canceled`/`interrupted` se ignoran y cualquier otro fallo se registra en consola sin romper la app.
+- `traceNarration.ts` es la fuente única de las frases escritas y habladas del ejercicio: la pantalla las muestra con Mochi y la voz lee exactamente el mismo texto. No hay un segundo sistema de instrucciones.
+- `TraceScreen` anuncia la letra o el número al entrar, lee la instrucción al aceptar un trazo, lee la pista concreta al fallar y cancela la voz al completar o desmontar. La victoria suena al completar; la pantalla de celebración espera a que termine la música de recompensa antes de leer su felicitación.
+- `AudioSettings.tsx`: panel accesible desde un botón fijo junto al botón de música. Ofrece tres interruptores grandes e independientes (Música, Efectos y Voz), con estado `aria-checked` y desactivación amable si el dispositivo no puede ofrecerlos.
 
 ### Storage
 
@@ -270,7 +288,7 @@ La reproducción automática se intenta al arrancar. Si el navegador la bloquea,
 - Operaciones `getRecord`, `getAllRecords`, `putRecord`, `deleteRecord`.
 - Errores propagados para que la UI muestre estados amables.
 
-`settings` sigue reservado para preferencias futuras de accesibilidad; la música usa `localStorage` porque es una preferencia síncrona y no necesita esperar a IndexedDB.
+`settings` sigue reservado para preferencias futuras de accesibilidad; la música, los efectos y la voz usan `localStorage` porque son preferencias síncronas, diminutas y ajenas al progreso educativo.
 
 ### PWA
 
@@ -319,14 +337,17 @@ La reproducción automática se intenta al arrancar. Si el navegador la bloquea,
 | PWA no registrable | Aviso en consola; la app sigue funcionando |
 | Reproducción automática bloqueada | Sin error visible; se reintenta tras un toque o tecla real |
 | Archivo de música ausente o no decodificable | Aviso en consola; el botón mantiene la preferencia y la app sigue funcionando |
-| `localStorage` bloqueado | La preferencia de música dura solo la sesión actual |
+| Web Audio no disponible | Los efectos se marcan como no disponibles; el interruptor queda desactivado y la app sigue igual |
+| `SpeechSynthesis` ausente o sin voces | La voz se marca como no disponible o usa la voz predeterminada; nunca bloquea el ejercicio |
+| Error al hablar | Se registra en consola, se detiene la locución y se puede reintentar |
+| `localStorage` bloqueado | Las preferencias de audio duran solo la sesión actual |
 
 ## 8. Pruebas
 
 - Vitest 4 + jsdom + Testing Library.
 - `src/test/setup.ts`: `jest-dom`, `fake-indexeddb/auto`, limpieza tras cada test (incluido `localStorage`), `ResizeObserver` controlable, `scrollTo`, contexto Canvas 2D mínimo y dobles inofensivos de `play`/`pause` para jsdom.
 - `src/test/resizeObserver.ts`: doble que conserva los observadores activos y permite dispararlos con `triggerResizeObservers()` para simular giros y redimensionados.
-- 18 archivos, 173 pruebas actualmente:
+- 23 archivos, 199 pruebas actualmente:
   - Router y rutas (incluidas la celebración `…/completado`, la lámina `#/pizarra/dibujo/:id` y la vuelta a la celebración).
   - Contenidos (64 caracteres, ids únicos, Ñ, palabras).
   - Catálogo de los 64 trazos: cobertura exacta, ids únicos, orden, extremos, límites del tablero, arcos, puntos de i/j, A intacta, Ñ, autotrazado, recorrido inverso, saltos de orden y garabatos.
@@ -341,6 +362,10 @@ La reproducción automática se intenta al arrancar. Si el navegador la bloquea,
   - Integración de la app y del flujo A → ejercicio → finalización → IndexedDB, incluida la finalización tras girar a horizontal, una minúscula, un número y el punto de la i.
   - Finalización del trazado: tres acciones en primera ronda y en repeticiones, dibujo correcto para letras y números, colores guardados recuperados, sesión limpia al repetir o avanzar, último elemento y estrellas sin duplicar.
   - Música ambiental: reproducción en bucle, un solo reproductor, silencio persistido, reanudación sin reinicio, pausa al ocultar la app, gesto tras autoplay bloqueado, archivo ausente y botón global.
+  - Efectos: duración de la victoria, cola sin solapamientos, pasos descartados durante la celebración, preferencia independiente y ausencia de Web Audio.
+  - Voz: elección de `es-ES` y alternativas, cancelación de la locución anterior, ventana anti-repetición, preferencia independiente, ausencia de `SpeechSynthesis` y recuperación tras un error.
+  - Ajustes de sonido: tres interruptores independientes, persistencia separada, controles desactivados si el dispositivo no puede ofrecerlos y cierre con Listo, Escape o toque fuera.
+  - Ejercicio narrado: anuncia la letra y la primera instrucción, lee la siguiente solo al acertar, no suena en trazos incorrectos y encadena victoria, estrella y desbloqueo al completar.
   - Pantallas principales en viewports horizontales.
   - Guarda de configuración de orientación (manifest Android, manifest PWA y viewport).
   - Guardas de la PWA instalada: `display`/`display_override`, colores e iconos, precache de MP3/OGG, `viewport-fit=cover`, alturas `100dvh`, áreas seguras y ausencia de scroll lateral.

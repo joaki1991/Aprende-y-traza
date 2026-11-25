@@ -2,7 +2,7 @@
 
 Aplicación educativa **kawaii** para que una niña de unos 4 años aprenda a trazar letras mayúsculas, minúsculas y números. Funciona como PWA instalable y está preparada para empaquetarse como app Android con Capacitor.
 
-> **Estado actual: Sprint 6 en curso (sin publicar).** La app incluye el catálogo completo de **64 fichas** (27 mayúsculas, 27 minúsculas y 10 números), todas trazables con el mismo motor, y un sistema de recompensas con **37 láminas para colorear** asociadas a las letras y los números. Cada ficha completada por primera vez da una estrella; cada letra o número desbloquea su dibujo, que se colorea por regiones independientes en la pizarra y se decora con pegatinas interactivas. Los sprints 4 y 5 publicados mejoraron las ilustraciones y el cierre del ejercicio; el Sprint 6 añade música ambiental local y una PWA instalada más inmersiva. Los niveles progresivos y el panel adulto llegan en los siguientes sprints.
+> **Estado actual: Sprint 6 publicado; Sprint 7 en curso (local, sin publicar).** La app incluye el catálogo completo de **64 fichas** (27 mayúsculas, 27 minúsculas y 10 números), todas trazables con el mismo motor, y un sistema de recompensas con **37 láminas para colorear** asociadas a las letras y los números. Cada ficha completada por primera vez da una estrella; cada letra o número desbloquea su dibujo, que se colorea por regiones independientes en la pizarra y se decora con pegatinas interactivas. El Sprint 6 publicado añadió música ambiental local y una PWA más inmersiva. El Sprint 7 incorpora efectos de sonido sintetizados, instrucciones habladas con la voz del dispositivo y preferencias independientes de música, efectos y voz. Los niveles progresivos y el panel adulto llegan en los siguientes sprints.
 
 ---
 
@@ -21,9 +21,12 @@ Aplicación educativa **kawaii** para que una niña de unos 4 años aprenda a tr
 - Progreso y composiciones en IndexedDB, sin registro ni datos personales; el ejercicio guarda intentos, rondas completadas, precisión y fecha, y la pizarra guarda colores, trazos y pegatinas.
 - PWA con manifest, iconos, service worker y funcionamiento offline.
 - Música ambiental local en bucle, con botón global de silencio y preferencia persistida; respeta el bloqueo de reproducción automática del móvil.
+- Efectos de sonido originales sintetizados con Web Audio: victoria al completar, estrella, recompensa desbloqueada y pasos sutiles. Suenan en cola, sin solaparse, y nunca en un trazo rechazado.
+- Instrucciones habladas con `SpeechSynthesis`: anuncia la letra o el número, lee las mismas frases que muestra Mochi y se detiene al completar o salir. Prefiere una voz `es-ES` y funciona aunque el dispositivo no tenga voz.
+- Panel de sonido con tres interruptores independientes (Música, Efectos y Voz); cada preferencia se guarda por separado y sobrevive a la recarga.
 - Proyecto Android generado con Capacitor, orientación libre, iconos y splash propios.
 - Diseño adaptable a vertical y horizontal (móvil, tablet y ventana de escritorio) con safe areas y sin scroll horizontal.
-- 173 pruebas automatizadas, TypeScript estricto, ESLint y build de producción verificado.
+- 199 pruebas automatizadas en 23 archivos, TypeScript estricto, ESLint y build de producción verificado.
 
 ## Requisitos
 
@@ -115,7 +118,7 @@ Notas:
 ├── docs/                    Arquitectura, decisiones y validación
 ├── licenses/                Licencias de las tipografías (OFL)
 ├── public/
-│   ├── audio/               Música ambiental local y su guía de sustitución
+│   ├── audio/               Música, efectos sintetizados, voz y ajustes de sonido
 │   ├── icons/               Iconos PWA, favicons y Apple Touch Icon
 │   └── robots.txt
 ├── scripts/
@@ -126,7 +129,7 @@ Notas:
 │   ├── components/          UI reutilizable: layout, iconos, mascota, botones
 │   ├── modules/
 │   │   ├── artworks/        Pizarra, láminas SVG, rellenos y pegatinas
-│   │   ├── audio/           Reproductor único, preferencia y botón de silencio
+│   │   ├── audio/           Música, efectos Web Audio, voz y panel de sonido
 │   │   ├── home/            Pantalla principal
 │   │   ├── learning/        Selección y vista previa de paquetes
 │   │   ├── lessons/         Modelo, contenido y trazos SVG (`traces/`)
@@ -190,14 +193,38 @@ Rutas útiles: `#/recompensas`, `#/pizarra` y `#/pizarra/dibujo/letter-a`.
 - **Safe areas:** padding con `env(safe-area-inset-*)` para notch, barras y gestos del sistema.
 - Al girar no se recarga la app ni se pierde la ronda: Android conserva la actividad y React mantiene el estado.
 
-## Música ambiental
+## Audio: música, efectos y voz
 
-- La música vive en `public/audio/background-music.mp3` y se empaqueta con la app; funciona sin conexión y el service worker la precarga.
+Los tres sistemas son independientes y se pueden combinar como se quiera: música sin efectos, efectos sin voz, voz con todo lo demás silenciado, etc.
+
+### Música ambiental
+
+- La música vive en `public/audio/music/background-music.mp3` y se empaqueta con la app; funciona sin conexión y el service worker la precarga.
 - Un único reproductor `HTMLAudioElement` se crea de forma diferida y se comparte desde `AmbientMusicProvider`, por encima del router: cambiar de pantalla no reinicia la canción.
 - El botón de altavoz está fijo en la esquina superior derecha de todas las pantallas, con iconos de altavoz activo y silenciado, y no tapa los controles del ejercicio ni de la pizarra.
 - Silenciar pausa el mismo elemento y volver a activar reanuda en el mismo instante. La preferencia se guarda en `localStorage` (`aprende-y-traza.music.muted`) y se conserva entre sesiones.
 - Si el navegador bloquea la reproducción automática, la app no muestra errores: espera al primer toque o tecla real y reintenta. Al volver del segundo plano reanuda si la música sigue activa.
 - Para sustituir la melodía, sigue `public/audio/README.md`. Si el archivo falta, la app sigue funcionando con normalidad.
+
+### Efectos de sonido
+
+- Se sintetizan con Web Audio en `src/modules/audio/soundEffects.ts`; no hay archivos ni muestras externas, así que no necesitan licencias ni conexión.
+- La victoria dura 0,86 s y encadena cuatro campanitas suaves en Do mayor. Después suenan, si corresponden, la estrella y el desbloqueo de la lámina.
+- Un único reproductor encola los efectos: la celebración nunca se pisa con la estrella ni con el desbloqueo. Los pasos sutiles se descartan mientras hay una celebración en curso.
+- No hay efecto en un trazo incorrecto, incompleto o fuera de orden, ni en botones genéricos. Repetir una ficha correctamente vuelve a celebrar, pero no concede otra estrella.
+- La preferencia vive en `localStorage` (`aprende-y-traza.effects.enabled`). Si el dispositivo no ofrece Web Audio, el interruptor aparece desactivado y la app sigue igual.
+
+### Voz e instrucciones
+
+- Usa `SpeechSynthesis` nativo, sin API keys ni servicios externos. Prefiere una voz `es-ES`; si no existe, usa otra voz española y, como último recurso, la predeterminada del sistema.
+- `src/modules/tracing/traceNarration.ts` es la única fuente de las frases del ejercicio. `TraceScreen` muestra esos mismos textos y la voz lee exactamente el mismo contenido: no hay un segundo sistema de instrucciones.
+- Al entrar anuncia la letra o el número y la primera instrucción. Al aceptar un trazo lee el siguiente paso; al fallar ofrece la pista concreta del motor; al completar cancela la voz, suena la victoria y la felicitación espera a que termine la música.
+- Se cancela al salir de la pantalla, al repetir y al completar. Una ventana de 3,5 s evita repetir la misma frase y cada nueva locución cancela la anterior.
+- La preferencia vive en `localStorage` (`aprende-y-traza.speech.enabled`). Desactivarla corta la locución en curso; si no hay voces instaladas, la app continúa sin voz y sin errores visibles.
+
+### Panel de sonido
+
+El botón de ajustes, fijo junto al botón de música, abre un panel con tres interruptores grandes e independientes: **Música**, **Efectos** y **Voz**. Cada uno muestra su estado con `aria-checked`, se puede usar con teclado y se cierra con Listo, Escape o un toque fuera. El botón global de música del Sprint 6 se mantiene sin cambios.
 
 ## PWA instalada y pantalla completa
 
@@ -212,8 +239,8 @@ Rutas útiles: `#/recompensas`, `#/pizarra` y `#/pizarra/dibujo/letter-a`.
 - Sin backend, sin registro, sin cuentas y sin datos personales.
 - Sin anuncios, analítica, píxeles de seguimiento ni enlaces externos.
 - Sin Google Fonts, CDNs ni APIs remotas: fuentes, SVG, iconos y datos están en el paquete.
-- El progreso se guarda solo en IndexedDB, en el dispositivo. La preferencia de música usa `localStorage`.
-- La versión web funciona offline tras la primera carga, incluida la música; la versión Android lleva los assets dentro del APK.
+- El progreso se guarda solo en IndexedDB, en el dispositivo. Las preferencias de audio (música, efectos y voz) usan `localStorage` y no contienen datos personales.
+- La versión web funciona offline tras la primera carga, incluida la música; la versión Android lleva los assets dentro del APK. Los efectos se generan en el dispositivo y la voz usa las voces instaladas, sin descargas.
 - No hay compras ni servicios de pago.
 
 Las tipografías **Fredoka** y **Nunito** se distribuyen bajo SIL Open Font License 1.1. Las licencias están en `licenses/`.
@@ -227,12 +254,13 @@ npm run test:run
 npm run build
 ```
 
-Resultados de referencia del Sprint 3: [`docs/sprint-3.md`](docs/sprint-3.md). Las ilustraciones renovadas del Sprint 4 están en [`docs/sprint-4-ilustraciones.md`](docs/sprint-4-ilustraciones.md). El Sprint 2 queda documentado en [`docs/sprint-2.md`](docs/sprint-2.md), el Sprint 1.5 en [`docs/sprint-1.5.md`](docs/sprint-1.5.md), el Sprint 1 en [`docs/sprint-1.md`](docs/sprint-1.md) y el Sprint 0 en [`docs/sprint-0.md`](docs/sprint-0.md).
+Resultados de referencia del Sprint 7: [`docs/sprint-7.md`](docs/sprint-7.md). El Sprint 6 queda documentado en [`docs/sprint-6.md`](docs/sprint-6.md). Las ilustraciones renovadas del Sprint 4 están en [`docs/sprint-4-ilustraciones.md`](docs/sprint-4-ilustraciones.md). El Sprint 3 queda documentado en [`docs/sprint-3.md`](docs/sprint-3.md), el Sprint 2 en [`docs/sprint-2.md`](docs/sprint-2.md), el Sprint 1.5 en [`docs/sprint-1.5.md`](docs/sprint-1.5.md), el Sprint 1 en [`docs/sprint-1.md`](docs/sprint-1.md) y el Sprint 0 en [`docs/sprint-0.md`](docs/sprint-0.md).
 
 ## Documentación
 
 - [`docs/architecture.md`](docs/architecture.md): arquitectura, capas, flujos y guías de extensión.
 - [`docs/technical-decisions.md`](docs/technical-decisions.md): registro de decisiones técnicas (ADR).
+- [`docs/sprint-7.md`](docs/sprint-7.md): efectos Web Audio, voz, preferencias de audio, pruebas y limitaciones.
 - [`docs/sprint-6.md`](docs/sprint-6.md): música ambiental, PWA inmersiva, pruebas y limitaciones.
 - [`docs/sprint-4-ilustraciones.md`](docs/sprint-4-ilustraciones.md): renovación de láminas y licencias.
 - [`docs/sprint-3.md`](docs/sprint-3.md): recompensas, 37 láminas, pizarra de relleno y pegatinas.

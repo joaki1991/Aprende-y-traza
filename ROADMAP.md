@@ -4,7 +4,7 @@ Plan de sprints secuenciales. Cada sprint termina con una demo verificable, prue
 
 Leyenda: ✅ completado · 🚧 en curso · ⏳ pendiente
 
-> **Actualización (2026-11-25):** el repositorio ya completó y publicó el flujo de lecciones, las láminas del abecedario y la finalización del trazado. El **Sprint 6 en curso** es «Música ambiental y PWA inmersiva»; las fichas de recompensas, sonido y PWA que aparecen más abajo se replanificarán después de este sprint.
+> **Actualización (2026-11-25):** el repositorio publicó el catálogo completo, las recompensas, las ilustraciones, el cierre del ejercicio y, en `7336301`, la música ambiental y la PWA inmersiva del **Sprint 6**. El **Sprint 7 — Efectos de sonido y voz** está implementado, revisado y comprometido en la rama local; queda pendiente de push/publicación. La numeración de los commits 4 y 5 siguió el trabajo realmente entregado (ilustraciones y cierre del ejercicio), por lo que algunas secciones de este documento conservan el plan original como referencia.
 
 ## Resumen
 
@@ -16,10 +16,10 @@ Leyenda: ✅ completado · 🚧 en curso · ⏳ pendiente
 | 2 | Catálogo completo: 27 mayúsculas, 27 minúsculas y 10 números | ✅ |
 | 3 | Recompensas, 37 dibujos para colorear y pegatinas en la pizarra | ✅ |
 | 3.5 | Flujo de lecciones y evaluación | ⏳ |
-| 4 | Sistema visual definitivo y revisión pedagógica | ⏳ |
-| 5 | Progreso detallado y persistencia avanzada | ⏳ |
-| 6 | Recompensas y motivación | ⏳ |
-| 7 | Sonido, accesibilidad y refuerzo educativo | ⏳ |
+| 4 | Ilustraciones revisadas y sistema visual | ✅ |
+| 5 | Cierre del ejercicio de trazado | ✅ |
+| 6 | Música ambiental y PWA inmersiva | ✅ |
+| 7 | Efectos de sonido, voz y preferencias independientes | 🚧 |
 | 8 | PWA offline avanzada e instalación | ⏳ |
 | 9 | Android, rendimiento y preparación de release | ⏳ |
 
@@ -185,9 +185,11 @@ Leyenda: ✅ completado · 🚧 en curso · ⏳ pendiente
 
 ---
 
-## Sprint 4 — Sistema visual definitivo y revisión pedagógica ⏳
+## Sprint 4 — Ilustraciones revisadas y sistema visual ✅
 
 **Objetivo:** pulir la experiencia infantil una vez que todo el catálogo ya es trazable y revisar la calidad pedagógica de las 64 fichas.
+
+> **Publicado:** el commit `bde4875` renovó once láminas y documentó sus licencias. El resto del alcance (sistema visual completo y revisión pedagógica) queda como referencia para una tarea futura.
 
 **Alcance:**
 
@@ -210,9 +212,11 @@ Leyenda: ✅ completado · 🚧 en curso · ⏳ pendiente
 
 ---
 
-## Sprint 5 — Progreso detallado y persistencia avanzada ⏳
+## Sprint 5 — Cierre del ejercicio de trazado ✅
 
 **Objetivo:** dar información útil a la niña y a un adulto, sin convertir la app en un panel complicado.
+
+> **Publicado:** el commit `b4dd875` mejoró el flujo de finalización del trazado. El progreso detallado, el historial y el panel adulto quedan como referencia para tareas posteriores.
 
 **Alcance:**
 
@@ -229,41 +233,45 @@ Leyenda: ✅ completado · 🚧 en curso · ⏳ pendiente
 
 ---
 
-## Sprint 6 — Recompensas y motivación ⏳
+## Sprint 6 — Música ambiental y PWA inmersiva ✅
 
-**Objetivo:** ampliar la motivación simbólica ya iniciada en el Sprint 3, sin azar ni presión.
+**Objetivo:** añadir una melodía de fondo continua y una experiencia de PWA instalada más inmersiva, sin backend ni recursos remotos.
 
-**Alcance:**
+**Entregables:**
 
-- Catálogo de pegatinas ampliado y nuevos hitos de desbloqueo, conservando los actuales.
-- Álbum de pegatinas con animación de desbloqueo.
-- Recompensas por constancia, no por velocidad.
-- Mascota Mochi con reacciones y frases cortas.
-- Sin monedas, loot boxes, compras ni mecánicas adictivas.
-- Pruebas de hitos y de estados bloqueado/desbloqueado.
+- Un único `HTMLAudioElement` perezoso en `AmbientMusicProvider`, por encima del router, con bucle y volumen suave.
+- `MusicToggle` global con silencio persistido en `localStorage` y reanudación sin reiniciar la canción.
+- Precache del MP3 con Workbox y reproducción offline.
+- Manifest `standalone` con `display_override`, `orientation: any`, colores pastel e iconos `any`/`maskable`.
+- `viewport-fit=cover`, `100dvh` y áreas seguras sin forzar `fullscreen`.
+- Documentación y pruebas en `docs/sprint-6.md`.
 
-**Criterio de aceptación:** todas las recompensas se obtienen jugando; no hay forma de comprar ni de perderlas; el álbum funciona offline.
+**Evidencia:** commit `7336301` — `feat(sprint-6): anadir musica ambiental y PWA inmersiva`.
 
-**Dependencias:** Sprints 3 y 5.
+**Dependencias:** Sprints 0 y 5.
 
 ---
 
-## Sprint 7 — Sonido, accesibilidad y refuerzo educativo ⏳
+## Sprint 7 — Efectos de sonido y acompañamiento por voz 🚧
 
-**Objetivo:** añadir apoyo auditivo y reforzar el aprendizaje sin depender de la lectura.
+**Objetivo:** reforzar el aprendizaje sin depender de la lectura, con sonidos breves y las instrucciones reales del motor leídas en voz alta.
 
-**Alcance:**
+**Alcance implementado:**
 
-- Efectos y voces locales (archivos propios o TTS del dispositivo como mejora opcional, nunca servicio obligatorio).
-- Instrucciones habladas por carácter y por acción.
-- Control de volumen y silencio persistido en ajustes.
-- Modo alto contraste y texto grande.
-- Compatibilidad con lectores de pantalla en la web.
-- Actividades de refuerzo: asociar sonido, imagen y carácter.
+- Efectos originales sintetizados con Web Audio (`victory`, `star`, `unlock`, `step`), con cola y prioridades para evitar solapamientos.
+- Victoria única por finalización válida; estrella y desbloqueo solo después de `recordPractice`.
+- Voz con `SpeechSynthesis`, preferencia `es-ES`, alternativa española y degradación amable si no hay voces.
+- Instrucciones habladas desde `traceNarration.ts`, la misma fuente que usa la pantalla; sin duplicar el sistema de mensajes.
+- Cancelación al salir, repetir o completar, deduplicación y coordinación de la felicitación con la música de victoria.
+- Tres preferencias independientes (música, efectos y voz) y panel de sonido con interruptores grandes.
+- Recursos organizados en `public/audio/music/` y `public/audio/effects/`; sin muestras externas.
+- Pruebas unitarias y de integración, documentación en `docs/sprint-7.md`.
 
-**Criterio de aceptación:** la app se puede usar con sonido y sin él; todos los audios están empaquetados; no se descargan voces en tiempo de ejecución.
+**Criterio de aceptación:** la app se puede usar con música, efectos y voz en cualquier combinación; los efectos no suenan en trazos incorrectos ni se duplican; la voz no repite ni se solapa; todo funciona offline y en Android.
 
-**Dependencias:** Sprints 3 y 4.
+**Estado:** implementado, verificado y comprometido localmente; **pendiente de push/publicación**.
+
+**Dependencias:** Sprints 3, 5 y 6.
 
 ---
 

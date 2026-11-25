@@ -3,6 +3,8 @@ import { getDrawing } from '@/modules/artworks/drawings';
 import { getLessonCharacter, getLessonPack } from '@/modules/lessons/content';
 import { AppShell } from '@/components/layout/AppShell';
 import { AmbientMusicProvider } from '@/modules/audio/AmbientMusicProvider';
+import { AudioProvider } from '@/modules/audio/AudioProvider';
+import { AudioSettings } from '@/modules/audio/AudioSettings';
 import { MusicToggle } from '@/modules/audio/MusicToggle';
 import { HomeScreen } from '@/modules/home/HomeScreen';
 import { LearningScreen } from '@/modules/learning/LearningScreen';
@@ -94,12 +96,15 @@ export function App() {
 
   return (
     <AmbientMusicProvider>
-      <AppShell>
-        <MusicToggle />
-        <div className={styles.route} key={currentKey}>
-          {screenForRoute(route)}
-        </div>
-      </AppShell>
+      <AudioProvider>
+        <AppShell>
+          <MusicToggle />
+          <AudioSettings />
+          <div className={styles.route} key={currentKey}>
+            {screenForRoute(route)}
+          </div>
+        </AppShell>
+      </AudioProvider>
     </AmbientMusicProvider>
   );
 }

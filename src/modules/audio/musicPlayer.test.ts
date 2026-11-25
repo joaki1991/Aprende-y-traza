@@ -69,7 +69,7 @@ describe('createMusicPlayer', () => {
     expect(created).toHaveLength(1);
     expect(created[0].loop).toBe(true);
     expect(created[0].volume).toBe(MUSIC_VOLUME);
-    expect(created[0].src).toContain('audio/background-music.mp3');
+    expect(created[0].src).toContain('audio/music/background-music.mp3');
     expect(player.getSnapshot()).toEqual({
       muted: false,
       playing: true,
@@ -95,7 +95,7 @@ describe('createMusicPlayer', () => {
     expect(player.getSnapshot().playing).toBe(true);
     expect(window.localStorage.getItem(MUSIC_MUTED_STORAGE_KEY)).toBe('false');
     expect(created[0].currentTime).toBe(37);
-    expect(created[0].src).toContain('audio/background-music.mp3');
+    expect(created[0].src).toContain('audio/music/background-music.mp3');
     expect(created).toHaveLength(1);
   });
 

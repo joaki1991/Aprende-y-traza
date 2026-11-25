@@ -1,7 +1,7 @@
 # Sprint 6 — Música ambiental y PWA inmersiva
 
-**Estado:** implementado y verificado, **pendiente de revisión y commit**.
-**Base publicada:** `b4dd875` — `feat(sprint-5): improve tracing completion flow` (`HEAD == origin/main`).
+**Estado:** implementado, verificado y **publicado** en `7336301` (`feat(sprint-6): anadir musica ambiental y PWA inmersiva`).
+**Base publicada anterior:** `b4dd875` — `feat(sprint-5): improve tracing completion flow`.
 
 ## 1. Música ambiental
 
@@ -32,10 +32,10 @@ El audio se crea de forma diferida: si la preferencia guardada es «silenciado»
 ### Archivo de audio
 
 ```text
-public/audio/background-music.mp3   (1 978 618 bytes)
+public/audio/music/background-music.mp3   (1 978 618 bytes)
 ```
 
-`MUSIC_SOURCE` resuelve `${import.meta.env.BASE_URL}audio/background-music.mp3`, así que funciona en web, subdirectorios, PWA y Capacitor. Workbox precarga `mp3` y `ogg` con un límite de 5 MiB por archivo.
+`MUSIC_SOURCE` resuelve `${import.meta.env.BASE_URL}audio/music/background-music.mp3`, así que funciona en web, subdirectorios, PWA y Capacitor. Workbox precarga `mp3` y `ogg` con un límite de 5 MiB por archivo.
 
 Instrucciones de sustitución, licencia y comportamiento si falta el archivo: `public/audio/README.md`.
 
@@ -78,7 +78,7 @@ Manual en Chromium:
 - Botón visible y sin solaparse con los controles del ejercicio o de la pizarra.
 - Silencio persistente tras recargar y al cambiar de ruta.
 - Una sola petición del MP3; sin errores en consola.
-- Build de producción: el service worker precarga `index.html` y `audio/background-music.mp3` (1 978 618 bytes), por lo que la música está disponible sin conexión.
+- Build de producción: el service worker precarga `index.html` y `audio/music/background-music.mp3` (1 978 618 bytes), por lo que la música está disponible sin conexión.
 
 ## 4. Comandos verificados
 
@@ -105,6 +105,12 @@ Generado de nuevo con los assets del Sprint 6 y `cap sync android`.
 - El autoplay puede requerir el primer toque. No se intenta evitar esa restricción del navegador.
 - La licencia del MP3 aportado debe confirmarse antes de distribuir la app.
 
-## 7. Cambios pendientes de commit
+## 7. Publicación
 
-Nada del Sprint 6 se ha confirmado ni publicado. Quedan modificados `AGENTS.md`, `README.md`, `ROADMAP.md`, `docs/architecture.md`, `docs/technical-decisions.md`, `src/app/*`, `src/components/icons/Icons.tsx`, `src/components/layout/AppShell.module.css`, `src/modules/home/HomeScreen.module.css`, `src/styles/base.css`, `src/test/setup.ts`, `vite.config.ts`, y sin seguimiento `public/audio/`, `src/app/pwa.test.ts` y `src/modules/audio/`.
+El Sprint 6 se publicó en `origin/main` con el commit `7336301`:
+
+```text
+feat(sprint-6): anadir musica ambiental y PWA inmersiva
+```
+
+Después del push, `HEAD == origin/main == 7336301`. El Sprint 7 parte de esa base y se mantiene local, sin commit ni push.

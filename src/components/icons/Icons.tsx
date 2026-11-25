@@ -137,6 +137,39 @@ export function VolumeOffIcon(props: IconProps) {
   );
 }
 
+export function MusicIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M9.4 17.2V6.4l9-2.1v10.7" />
+      <circle cx="6.6" cy="17.6" r="2.7" />
+      <circle cx="15.6" cy="15.7" r="2.7" />
+    </IconBase>
+  );
+}
+
+export function SpeechIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M4.4 5.2h10.8a2 2 0 0 1 2 2v6.2a2 2 0 0 1-2 2H9.6L5.6 19v-3.6h-.4a1.6 1.6 0 0 1-1.6-1.6V7a1.8 1.8 0 0 1 .8-1.8Z" />
+      <path d="M8.2 9.2h5.2" />
+      <path d="M8.2 12.2h3.4" />
+    </IconBase>
+  );
+}
+
+export function SettingsIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M4 7.4h16" />
+      <path d="M4 12h16" />
+      <path d="M4 16.6h16" />
+      <circle cx="8.6" cy="7.4" r="2.1" fill="var(--color-paper)" />
+      <circle cx="15.4" cy="12" r="2.1" fill="var(--color-paper)" />
+      <circle cx="10.6" cy="16.6" r="2.1" fill="var(--color-paper)" />
+    </IconBase>
+  );
+}
+
 export function SparkleIcon(props: IconProps) {
   return (
     <IconBase {...props}>

@@ -7,9 +7,10 @@ import { BigActionLink } from '@/components/ui/BigActionLink';
 import { NotFoundScreen } from '@/app/NotFoundScreen';
 import { getLessonCharacter, getLessonPack } from '@/modules/lessons/content';
 import { getCharacterTrace } from '@/modules/lessons/traces';
-import type { CharacterTrace, TracePoint } from '@/modules/lessons/lesson.types';
+import type { TracePoint } from '@/modules/lessons/lesson.types';
 import { lessonHref, traceCompleteHref } from '@/app/router';
 import { useProgress } from '@/modules/progress/progressContext';
+import { useSoundEffects, useSpeech } from '@/modules/audio/audioContext';
 import {
   createTraceSession,
   resetTraceSession,
@@ -17,7 +18,13 @@ import {
   traceSessionAccuracy,
   type TraceSessionState,
 } from './traceSession';
-import type { TraceIssue, TraceValidationResult } from './traceValidation';
+import {
+  traceCompletionMessage,
+  traceIntroInstruction,
+  traceNextInstruction,
+  traceRetryMessage,
+  traceSuccessMessage,
+} from './traceNarration';
 import { TraceCanvas } from './TraceCanvas';
 import { TraceGuide } from './TraceGuide';
 import styles from './TraceScreen.module.css';
@@ -37,58 +44,23 @@ interface Feedback {
 const ADVANCE_DELAY_MS = 800;
 const RETRY_DELAY_MS = 900;
 
-function firstInstruction(trace: CharacterTrace, glyph: string, article: 'el' | 'la'): string {
-  const stroke = trace.strokes[0];
-  return stroke
-    ? `Vamos a trazar ${article} ${glyph}. ${stroke.instruction}`
-    : `Vamos a trazar ${article} ${glyph}.`;
-}
-
-function nextInstruction(trace: CharacterTrace, index: number): string {
-  const stroke = trace.strokes[index];
-  return stroke ? `Ahora: ${stroke.instruction}` : 'Sigue los puntitos.';
-}
-
-function retryMessage(result: TraceValidationResult): string {
-  const issues = new Set<TraceIssue>(result.issues);
-
-  if (issues.has('wrong-order')) {
-    return '¡Casi! Primero toca este trazo. Sigue la flecha rosa.';
-  }
-  if (issues.has('start-too-far')) {
-    return '¡Casi! Empieza en el punto verde.';
-  }
-  if (issues.has('finish-too-far')) {
-    return '¡Casi! Sigue los puntitos hasta el final.';
-  }
-  if (issues.has('backwards')) {
-    return '¡Casi! Ve en el sentido de la flecha.';
-  }
-  if (issues.has('off-path') || issues.has('scribble')) {
-    return '¡Casi! Despacito, siguiendo los puntitos.';
-  }
-  if (issues.has('incomplete')) {
-    return '¡Casi! Recorre todos los puntitos.';
-  }
-  if (issues.has('too-short')) {
-    return '¡Casi! Desliza el dedo por el caminito.';
-  }
-  return '¡Casi! Prueba otra vez. Tú puedes.';
-}
-
 export function TraceScreen({ packId, characterId }: TraceScreenProps) {
   const pack = getLessonPack(packId);
   const character = getLessonCharacter(packId, characterId);
   const trace = getCharacterTrace(characterId);
   const { recordPractice } = useProgress();
+  const { play: playEffect } = useSoundEffects();
+  const { speak, cancel: cancelSpeech } = useSpeech();
   const article: 'el' | 'la' = pack?.scriptId === 'digits' ? 'el' : 'la';
+  const introMessage =
+    trace && character ? traceIntroInstruction(trace, character.glyph, article) : '';
 
   const [session, setSession] = useState<TraceSessionState>(() =>
     trace ? createTraceSession(trace) : createTraceSessionForEmpty(),
   );
   const [feedback, setFeedback] = useState<Feedback>(() => ({
     kind: 'idle',
-    message: trace && character ? firstInstruction(trace, character.glyph, article) : '',
+    message: introMessage,
   }));
   const [locked, setLocked] = useState(false);
   const [resetKey, setResetKey] = useState(0);
@@ -114,6 +86,14 @@ export function TraceScreen({ packId, characterId }: TraceScreenProps) {
   }, []);
 
   useEffect(() => clearTimer, [clearTimer]);
+
+  useEffect(() => {
+    if (!introMessage) {
+      return;
+    }
+    speak(introMessage);
+    return () => cancelSpeech();
+  }, [introMessage, speak, cancelSpeech]);
 
   if (!pack || !character) {
     return <NotFoundScreen />;
@@ -184,9 +164,11 @@ export function TraceScreen({ packId, characterId }: TraceScreenProps) {
     setSession(submission.state);
 
     if (!result.accepted) {
+      const message = traceRetryMessage(result);
       setLocked(true);
       setPulseKey((key) => key + 1);
-      setFeedback({ kind: 'retry', message: retryMessage(result) });
+      setFeedback({ kind: 'retry', message });
+      speak(message);
       void recordPractice({
         packId: pack.id,
         characterId: character.id,
@@ -203,13 +185,12 @@ export function TraceScreen({ packId, characterId }: TraceScreenProps) {
     }
 
     if (submission.state.completed) {
+      cancelSpeech();
+      playEffect('victory');
       setLocked(true);
       setFeedback({
         kind: 'complete',
-        message:
-          article === 'el'
-            ? `¡Bravo! El ${character.glyph} está genial.`
-            : `¡Bravo! La ${character.glyph} está preciosa.`,
+        message: traceCompletionMessage(character.glyph, article),
       });
       if (!completionRecordedRef.current) {
         completionRecordedRef.current = true;
@@ -220,7 +201,14 @@ export function TraceScreen({ packId, characterId }: TraceScreenProps) {
           attempts: 1,
           completed: true,
           accuracy: traceSessionAccuracy(submission.state),
-        }).then(() => {
+        }).then((summary) => {
+          // La celebración sigue sonando aunque esta pantalla se sustituya.
+          if (summary?.starEarned) {
+            playEffect('star');
+          }
+          if (summary?.newDrawingId) {
+            playEffect('unlock');
+          }
           // Si la niña pulsa Repetir mientras se guarda, no debe saltar a la
           // pantalla de finalización de la ronda anterior.
           if (mountedRef.current && roundRef.current === round) {
@@ -231,18 +219,18 @@ export function TraceScreen({ packId, characterId }: TraceScreenProps) {
       return;
     }
 
+    const successMessage = traceSuccessMessage(trace, submission.state.currentStrokeIndex);
+    playEffect('step');
+    speak(successMessage);
     setLocked(true);
-    setFeedback({
-      kind: 'success',
-      message: `¡Muy bien! ${nextInstruction(trace, submission.state.currentStrokeIndex)}`,
-    });
+    setFeedback({ kind: 'success', message: successMessage });
     timerRef.current = window.setTimeout(() => {
       setLocked(false);
       setResetKey((key) => key + 1);
       setPulseKey((key) => key + 1);
       setFeedback({
         kind: 'idle',
-        message: nextInstruction(trace, submission.state.currentStrokeIndex),
+        message: traceNextInstruction(trace, submission.state.currentStrokeIndex),
       });
       timerRef.current = null;
     }, ADVANCE_DELAY_MS);
@@ -255,10 +243,12 @@ export function TraceScreen({ packId, characterId }: TraceScreenProps) {
     completionRecordedRef.current = false;
     partialRecordedRef.current = false;
     setSession(resetTraceSession(trace));
-    setFeedback({ kind: 'idle', message: firstInstruction(trace, character.glyph, article) });
+    setFeedback({ kind: 'idle', message: introMessage });
     setLocked(false);
     setResetKey((key) => key + 1);
     setPulseKey((key) => key + 1);
+    cancelSpeech();
+    speak(introMessage);
   };
 
   return (

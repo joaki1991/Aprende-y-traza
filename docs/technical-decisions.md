@@ -1,6 +1,6 @@
 # Registro de decisiones técnicas (ADR)
 
-Decisiones tomadas durante los sprints 0, 1, 1.5 y 2. Formato ligero: contexto → decisión → consecuencias. Una decisión nueva debe añadirse aquí, no solo al código.
+Decisiones tomadas durante los sprints 0 a 7. Formato ligero: contexto → decisión → consecuencias. Una decisión nueva debe añadirse aquí, no solo al código.
 
 ---
 
@@ -596,7 +596,7 @@ La puntuación es `0.45 × cobertura + 0.35 × precisión + 0.20 × dirección`.
 **Decisión:**
 
 - Un solo `HTMLAudioElement` creado de forma diferida por `createMusicPlayer()`, con `loop = true`, `preload = 'auto'` y volumen `0.24`.
-- El archivo se sirve desde `public/audio/background-music.mp3` y se precarga con el service worker.
+- El archivo se sirve desde `public/audio/music/background-music.mp3` y se precarga con el service worker.
 - `AmbientMusicProvider` se monta una vez por encima del router; `MusicToggle` usa `useSyncExternalStore` para reflejar el estado real.
 - La preferencia de silencio se guarda en `localStorage` (`aprende-y-traza.music.muted`). No se usa IndexedDB porque es un dato síncrono, diminuto y ajeno al progreso educativo.
 - Si `play()` falla por bloqueo de autoplay, no se muestra ningún error: se espera a un `pointerdown` o `keydown` real y se reintenta. Silenciar pausa el mismo elemento; activar lo reanuda sin reiniciar.
@@ -632,4 +632,79 @@ La puntuación es `0.45 × cobertura + 0.35 × precisión + 0.20 × dirección`.
 - La app sigue funcionando igual desde el navegador normal y en el WebView de Capacitor.
 - El contenido no queda bajo el notch ni bajo las esquinas redondeadas; los controles principales mantienen al menos 44–56 px.
 - No se promete una pantalla completamente limpia de barras del sistema porque ningún navegador lo garantiza.
+
+---
+
+## ADR-036 — Efectos de sonido sintetizados con Web Audio, sin muestras externas
+
+**Fecha:** 2026-11-25 · **Estado:** aceptada
+
+**Contexto:** el Sprint 7 necesita una victoria alegre, una estrella y un desbloqueo diferenciados. Se quiere evitar descargar muestras, revisar licencias de audio y añadir dependencias, manteniendo el funcionamiento offline y un volumen agradable para una niña de cuatro años.
+
+**Decisión:**
+
+- Sintetizar cuatro patrones originales (`victory`, `star`, `unlock`, `step`) con osciladores senoidales y envolventes de ganancia de Web Audio. Las notas están en Do mayor y la victoria dura 0,86 s, dentro del rango orientativo de 0,5–2 s.
+- Un único reproductor por aplicación, creado en `AudioProvider`, con un `GainNode` maestro a `0.42`. Los efectos se encolan con `busyUntil`: la victoria, la estrella y el desbloqueo nunca se pisan.
+- Prioridades: victoria 3, estrella/desbloqueo 2 y paso 1. Un paso se descarta si hay una celebración en curso; la cola se limita a 4 s y se ignoran repeticiones del mismo efecto en 0,35 s.
+- La victoria se dispara al aceptar el trazo final, antes de `recordPractice`; la estrella y el desbloqueo se disparan en el `then` de `recordPractice`, solo si el resumen los confirma. Ningún trazo rechazado, incompleto o fuera de orden reproduce un efecto.
+- La preferencia vive en `localStorage` (`aprende-y-traza.effects.enabled`). Si `AudioContext` no existe, el reproductor marca `available: false` y el interruptor queda desactivado sin romper la pantalla.
+- `createSoundEffectsPlayer` acepta un contexto inyectable para probar la cola, los patrones y la ausencia de la API sin un navegador real.
+
+**Consecuencias:**
+
+- No hay archivos de efectos, licencias de muestras ni peticiones de red; el sonido se genera en el dispositivo.
+- El timbre depende del motor de audio del dispositivo, pero los patrones y volúmenes son estables.
+- Repetir una ficha correctamente vuelve a celebrar con sonido, sin conceder estrellas adicionales: el sistema de recompensas no cambia.
+- Un fallo del contexto de audio degrada a «no disponible»; la app sigue funcionando en silencio.
+- Si en el futuro se prefieren grabaciones, `public/audio/effects/` ya está reservado y documentado.
+
+---
+
+## ADR-037 — Voz con `SpeechSynthesis` reutilizando las instrucciones del motor
+
+**Fecha:** 2026-11-25 · **Estado:** aceptada
+
+**Contexto:** la niña todavía no lee y necesita oír qué letra va a trazar y qué hacer en cada paso. El motor de trazado ya genera instrucciones por trazo, mensajes de error y mensajes de éxito; crear un segundo conjunto de textos duplicaría el mantenimiento y podría desincronizarse.
+
+**Decisión:**
+
+- Usar la API nativa `SpeechSynthesis`, sin servicios en la nube, API keys ni descargas de voces.
+- Elegir la voz con esta preferencia: `es-ES`, después cualquier voz cuyo idioma empiece por `es` y, como último recurso, la voz predeterminada del sistema. Si no hay voces, se usa la predeterminada o se marca la voz como no disponible.
+- Configurar `lang = 'es-ES'`, velocidad `0.94`, tono `1.05` y volumen `1`, pensados para una lectura pausada y clara.
+- Un único reproductor por aplicación. Cada nueva locución cancela la anterior para que no se acumulen mensajes; una ventana de 3,5 s descarta la misma frase repetida, salvo que se pida con `force`.
+- `traceNarration.ts` es la fuente única de los textos escritos y hablados. `TraceScreen` muestra esas frases y llama a `speak` con exactamente el mismo contenido: presentación, instrucción del siguiente trazo, pista de error y mensaje de éxito.
+- Al completar se cancela la voz antes de la victoria. `TraceCompleteScreen` espera `Math.max(700, remainingMs() + 350)` para leer la felicitación cuando ya no suena la música de recompensa.
+- La voz se cancela al desmontar `TraceScreen`, al repetir y al desactivar la preferencia. Los errores `canceled` e `interrupted` se consideran benignos; el resto se registra con `console.info` sin bloquear la app.
+- La preferencia vive en `localStorage` (`aprende-y-traza.speech.enabled`).
+
+**Consecuencias:**
+
+- No hay un segundo sistema de instrucciones: cualquier cambio en `traceNarration` se refleja a la vez en pantalla y en voz.
+- La calidad y la disponibilidad dependen de las voces instaladas en el dispositivo. Puede sonar robótica o no existir; la app sigue siendo totalmente usable sin voz.
+- La síntesis funciona sin conexión cuando el sistema tiene una voz local instalada; no se descarga nada en tiempo de ejecución.
+- Cancelar antes de hablar y deduplicar evita solapamientos y saturación, pero una frase muy larga puede quedar cortada si llega un paso nuevo: es el comportamiento deseado.
+- El motor de trazado permanece puro y ajeno a React y a la voz; solo comparte los textos de presentación.
+
+---
+
+## ADR-038 — Tres preferencias de audio independientes y un panel único
+
+**Fecha:** 2026-11-25 · **Estado:** aceptada
+
+**Contexto:** música, efectos y voz tienen finalidades distintas y molestan de forma distinta. Una familia puede querer música de fondo sin voz, o voz sin efecto de pasos. El Sprint 6 ya tenía un botón global de música y una preferencia persistida que debía seguir funcionando tal cual.
+
+**Decisión:**
+
+- Tres claves independientes en `localStorage`: `aprende-y-traza.music.muted`, `aprende-y-traza.effects.enabled` y `aprende-y-traza.speech.enabled`. Todas son síncronas, diminutas y ajenas al progreso educativo; no se usa IndexedDB.
+- Composición de proveedores: `AmbientMusicProvider` → `AudioProvider` → `AppShell`. Así la música no se reinicia al navegar y los efectos sobreviven al cambio de pantalla durante la celebración.
+- Mantener `MusicToggle` como botón global de música y añadir `AudioSettings` como segundo botón fijo justo a su izquierda. El panel es un `role="dialog"` con tres `role="switch"` grandes (Música, Efectos y Voz), estado `aria-checked`, cierre con Listo, Escape o toque fuera y foco inicial en el panel.
+- Si el dispositivo no ofrece Web Audio o `SpeechSynthesis`, el interruptor correspondiente se muestra desactivado con el texto «No disponible en este dispositivo».
+- No se rediseña la portada ni la distribución principal: los botones son controles flotantes con áreas seguras.
+
+**Consecuencias:**
+
+- Cualquier combinación es válida y se conserva entre sesiones; la música mantiene exactamente el comportamiento del Sprint 6.
+- Si `localStorage` está bloqueado, las preferencias duran solo la sesión actual, sin errores visibles.
+- El panel usa un icono de ajustes con `aria-label` en lugar de texto, coherente con una niña que aún no lee; los adultos encuentran los tres estados de un vistazo.
+- No se añaden ajustes de volumen: el volumen base está calibrado en código para evitar que un control accidental deje la app muda o demasiado alta.
 

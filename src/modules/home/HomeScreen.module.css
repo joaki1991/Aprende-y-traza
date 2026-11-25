@@ -4,8 +4,8 @@
   justify-content: space-between;
   gap: 12px;
   min-height: 46px;
-  /* Reserva la columna del botón global de música. */
-  padding-right: 52px;
+  /* Reserva espacio para los controles globales de ajustes y música. */
+  padding-right: 108px;
 }
 
 .brand {
