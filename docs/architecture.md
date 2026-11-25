@@ -89,8 +89,10 @@ Router propio en `src/app/router.ts`:
 | `#/aprender` | Selección de mundos | `LearningScreen` |
 | `#/aprender/:packId` | Vista previa de paquete | `LessonPreviewScreen` |
 | `#/aprender/:packId/:characterId` | Ficha de trazado | `TraceScreen` |
+| `#/aprender/:packId/:characterId/completado` | Celebración y siguientes pasos | `TraceCompleteScreen` |
 | `#/pizarra` | Pizarra libre | `DoodleScreen` + `ArtworkBoard` |
 | `#/pizarra/dibujo/:drawingId` | Colorear una lámina | `DoodleScreen` + `ArtworkBoard` |
+| `#/pizarra/dibujo/:drawingId/desde/:packId/:characterId` | Colorear y volver a la celebración | `DoodleScreen` + `ArtworkBoard` |
 | `#/progreso` | Progreso | `ProgressScreen` |
 | `#/recompensas` | Recompensas | `RewardsScreen` |
 | otro | 404 amable | `NotFoundScreen` |
@@ -98,7 +100,7 @@ Router propio en `src/app/router.ts`:
 - `parseRoute` normaliza barras, query y decodifica `packId`, `characterId` y `drawingId`.
 - `useAppRoute` usa `useSyncExternalStore` sobre `hashchange`.
 - `routeKey` reinicia la pantalla al cambiar de lección, ficha o lámina; la `key` del árbol de la pizarra fuerza el remount y evita mezclar composiciones.
-- `drawingHref(drawingId)` construye la ruta de una lámina desbloqueada.
+- `drawingHref(drawingId, returnTrace?)` construye la ruta de una lámina desbloqueada; con `returnTrace` conserva el origen para que el botón Volver regrese a la celebración.
 - El hash funciona en cualquier subdirectorio, en el WebView y con el botón Atrás del navegador.
 - En Android, `registerHardwareBack` escucha `backButton`: si no estamos en la portada vuelve atrás; en la portada cierra la app.
 
@@ -150,7 +152,8 @@ El módulo contiene el motor del lápiz táctil y el motor educativo, que compar
 - `traceSession.ts`: máquina de estados que impone el orden, cuenta intentos y calcula la precisión media.
 - `TraceGuide.tsx`: guía SVG con puntos, trazo actual, completados, inicio pulsante, flecha y marcas de punto para i/j.
 - `TraceCanvas.tsx`: tinta transparente; guarda puntos en coordenadas del `viewBox`, pinta solo el segmento nuevo y limpia al cancelar o repetir.
-- `TraceScreen.tsx`: instrucciones de Mochi, pasos, feedback, celebración, repetición, vuelta y persistencia.
+- `TraceScreen.tsx`: instrucciones de Mochi, pasos, feedback, repetición, vuelta y persistencia. Al completar una ronda registra la práctica y navega a la pantalla de finalización.
+- `TraceCompleteScreen.tsx`: celebración posterior a la ronda. Muestra la letra o número, el nombre de la lámina y tres acciones siempre disponibles: colorear, repetir y siguiente. La estrella y el desbloqueo solo se anuncian en la primera completación; repetir no concede nada. En el último elemento del paquete, «Siguiente» se sustituye por la vuelta al listado.
 
 Flujo de un trazo educativo:
 
@@ -159,7 +162,8 @@ pointerdown → captura + punto inicial en viewBox + primer punto de tinta
 pointermove → convierte coordenadas, filtra puntos cercanos, pinta el segmento nuevo
 pointerup → libera captura y envía el trazo a la sesión
 sesión → evalúa solo el trazo actual; acepta y avanza, o rechaza y permite repetir
-ronda completa → celebración + registro en IndexedDB
+ronda completa → registro en IndexedDB + pantalla de finalización
+finalización → colorear (misma lámina y persistencia) · repetir (sesión limpia) · siguiente (orden del catálogo)
 pointercancel / lostcapture → descarta la tinta y libera el puntero
 ```
 
@@ -231,7 +235,7 @@ Separación deliberada:
 }
 ```
 
-`recordPractice({ packId, characterId, attempts, completed, accuracy })` suma intentos, incrementa `completions` al terminar una ronda, conserva la mejor precisión, guarda `lastResult` y actualiza la fecha. La primera finalización concede **1 estrella** de forma idempotente (`starsEarned` pasa de 0 a 1); repetir o dejar el intento incompleto no suma. Devuelve `PracticeRecordSummary { snapshot, starEarned, newDrawingId }`; `newDrawingId` solo aparece la primera vez y alimenta la celebración de dibujo nuevo. Los campos `completions` y `lastResult` son opcionales para seguir leyendo datos antiguos.
+`recordPractice({ packId, characterId, attempts, completed, accuracy })` suma intentos, incrementa `completions` al terminar una ronda, conserva la mejor precisión, guarda `lastResult` y actualiza la fecha. La primera finalización concede **1 estrella** de forma idempotente (`starsEarned` pasa de 0 a 1); repetir o dejar el intento incompleto no suma. Devuelve `PracticeRecordSummary { snapshot, starEarned, newDrawingId }`; `newDrawingId` solo aparece la primera vez que se desbloquea una lámina. La pantalla de finalización deduce la primera completación de `completions` y `lastResult`, y comprueba si la lámina ya existía para no anunciar una recompensa duplicada. Los campos `completions` y `lastResult` son opcionales para seguir leyendo datos antiguos.
 
 **Migración v1 → v2:** al leer un documento con `schemaVersion: 1`, se añade `artworks: {}`, se desbloquean las láminas de las fichas ya completadas (`starsEarned >= 1`) y se nivela `stars` al número de fichas completadas si el valor antiguo era menor. No se borra ningún dato y la migración se repite de forma segura si el guardado se interrumpe. `DB_VERSION` de IndexedDB sigue en 1: la migración es del documento, no de la base.
 
@@ -302,8 +306,8 @@ Separación deliberada:
 - Vitest 4 + jsdom + Testing Library.
 - `src/test/setup.ts`: `jest-dom`, `fake-indexeddb/auto`, limpieza tras cada test, `ResizeObserver` controlable, `scrollTo` y un contexto Canvas 2D mínimo para jsdom.
 - `src/test/resizeObserver.ts`: doble que conserva los observadores activos y permite dispararlos con `triggerResizeObservers()` para simular giros y redimensionados.
-- 15 archivos, 144 pruebas en Sprint 3:
-  - Router y rutas (incluidas la ficha de carácter y la lámina `#/pizarra/dibujo/:id`).
+- 15 archivos, 156 pruebas actualmente:
+  - Router y rutas (incluidas la celebración `…/completado`, la lámina `#/pizarra/dibujo/:id` y la vuelta a la celebración).
   - Contenidos (64 caracteres, ids únicos, Ñ, palabras).
   - Catálogo de los 64 trazos: cobertura exacta, ids únicos, orden, extremos, límites del tablero, arcos, puntos de i/j, A intacta, Ñ, autotrazado, recorrido inverso, saltos de orden y garabatos.
   - Catálogo de las 37 láminas: ids únicos, 27 letras + 10 números, regiones cerradas, Ñ y mapeo desde el catálogo educativo.
@@ -314,7 +318,8 @@ Separación deliberada:
   - Validación (correcto, invertido, extremos, incompleto, desviación, garabato, orden, tamaños horizontal/tablet, tolerancias estables y puntos de i/j).
   - Sesión ordenada (avance, saltos, reintento, reset y precisión).
   - Recompensas (hitos, desbloqueo, galería de dibujos).
-  - Integración de la app y del flujo A → ejercicio → celebración → dibujo nuevo → IndexedDB, incluida la finalización tras girar a horizontal, una minúscula, un número y el punto de la i.
+  - Integración de la app y del flujo A → ejercicio → finalización → IndexedDB, incluida la finalización tras girar a horizontal, una minúscula, un número y el punto de la i.
+  - Finalización del trazado: tres acciones en primera ronda y en repeticiones, dibujo correcto para letras y números, colores guardados recuperados, sesión limpia al repetir o avanzar, último elemento y estrellas sin duplicar.
   - Pantallas principales en viewports horizontales.
   - Guarda de configuración de orientación (manifest Android, manifest PWA y viewport).
 

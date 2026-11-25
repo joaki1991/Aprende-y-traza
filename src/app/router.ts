@@ -6,13 +6,19 @@
  * - funciona dentro del WebView de Capacitor,
  * - permite que el botón Atrás de Android navegue entre pantallas.
  */
+export interface TraceOrigin {
+  packId: string;
+  characterId: string;
+}
+
 export type AppRoute =
   | { name: 'home' }
   | { name: 'learning' }
   | { name: 'lesson'; packId: string }
   | { name: 'trace'; packId: string; characterId: string }
+  | { name: 'traceComplete'; packId: string; characterId: string }
   | { name: 'doodle' }
-  | { name: 'coloring'; drawingId: string }
+  | { name: 'coloring'; drawingId: string; returnTrace?: TraceOrigin }
   | { name: 'progress' }
   | { name: 'rewards' }
   | { name: 'notFound' };
@@ -33,9 +39,24 @@ export function characterHref(packId: string, characterId: string): string {
   return `${lessonHref(packId)}/${encodeURIComponent(characterId)}`;
 }
 
-/** Abre la pizarra con la plantilla de un dibujo desbloqueado. */
-export function drawingHref(drawingId: string): string {
-  return `${ROUTES.doodle}/dibujo/${encodeURIComponent(drawingId)}`;
+/** Pantalla de celebración al completar una ficha. */
+export function traceCompleteHref(packId: string, characterId: string): string {
+  return `${characterHref(packId, characterId)}/completado`;
+}
+
+/**
+ * Abre la pizarra con la plantilla de un dibujo desbloqueado.
+ *
+ * `returnTrace` conserva el origen para que el botón Volver regrese a la
+ * pantalla de finalización en lugar de perder el contexto.
+ */
+export function drawingHref(drawingId: string, returnTrace?: TraceOrigin): string {
+  const base = `${ROUTES.doodle}/dibujo/${encodeURIComponent(drawingId)}`;
+  return returnTrace
+    ? `${base}/desde/${encodeURIComponent(returnTrace.packId)}/${encodeURIComponent(
+        returnTrace.characterId,
+      )}`
+    : base;
 }
 
 /** Convierte un hash (`#/pizarra`) en una ruta tipada. */
@@ -46,7 +67,7 @@ export function parseRoute(hash: string): AppRoute {
     return { name: 'home' };
   }
 
-  const [first, second, third] = path.split('/');
+  const [first, second, third, fourth, fifth, sixth] = path.split('/');
 
   switch (first) {
     case 'aprender':
@@ -54,6 +75,13 @@ export function parseRoute(hash: string): AppRoute {
         return { name: 'learning' };
       }
       if (third) {
+        if (fourth === 'completado') {
+          return {
+            name: 'traceComplete',
+            packId: decodeURIComponent(second),
+            characterId: decodeURIComponent(third),
+          };
+        }
         return {
           name: 'trace',
           packId: decodeURIComponent(second),
@@ -63,6 +91,16 @@ export function parseRoute(hash: string): AppRoute {
       return { name: 'lesson', packId: decodeURIComponent(second) };
     case 'pizarra':
       if (second === 'dibujo' && third) {
+        if (fourth === 'desde' && fifth && sixth) {
+          return {
+            name: 'coloring',
+            drawingId: decodeURIComponent(third),
+            returnTrace: {
+              packId: decodeURIComponent(fifth),
+              characterId: decodeURIComponent(sixth),
+            },
+          };
+        }
         return { name: 'coloring', drawingId: decodeURIComponent(third) };
       }
       return { name: 'doodle' };
@@ -82,6 +120,9 @@ export function routeKey(route: AppRoute): string {
   }
   if (route.name === 'trace') {
     return `trace:${route.packId}:${route.characterId}`;
+  }
+  if (route.name === 'traceComplete') {
+    return `trace-complete:${route.packId}:${route.characterId}`;
   }
   if (route.name === 'coloring') {
     return `coloring:${route.drawingId}`;

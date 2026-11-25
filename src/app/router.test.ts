@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { ROUTES, characterHref, drawingHref, lessonHref, parseRoute, routeKey } from './router';
+import {
+  ROUTES,
+  characterHref,
+  drawingHref,
+  lessonHref,
+  parseRoute,
+  routeKey,
+  traceCompleteHref,
+} from './router';
 
 describe('parseRoute', () => {
   it('interpreta la portada con hash vacío o raíz', () => {
@@ -50,6 +58,29 @@ describe('parseRoute', () => {
     });
   });
 
+  it('interpreta la celebración posterior al trazado', () => {
+    expect(parseRoute('#/aprender/mayusculas/upper-a/completado')).toEqual({
+      name: 'traceComplete',
+      packId: 'mayusculas',
+      characterId: 'upper-a',
+    });
+    expect(parseRoute(traceCompleteHref('numeros', 'digit-5'))).toEqual({
+      name: 'traceComplete',
+      packId: 'numeros',
+      characterId: 'digit-5',
+    });
+  });
+
+  it('conserva el origen de la celebración al volver de la pizarra', () => {
+    const href = drawingHref('letter-a', { packId: 'mayusculas', characterId: 'upper-a' });
+    expect(href).toBe('#/pizarra/dibujo/letter-a/desde/mayusculas/upper-a');
+    expect(parseRoute(href)).toEqual({
+      name: 'coloring',
+      drawingId: 'letter-a',
+      returnTrace: { packId: 'mayusculas', characterId: 'upper-a' },
+    });
+  });
+
   it('mantiene la pizarra libre si falta el dibujo', () => {
     expect(parseRoute('#/pizarra/dibujo')).toEqual({ name: 'doodle' });
     expect(parseRoute('#/pizarra/dibujo/')).toEqual({ name: 'doodle' });
@@ -66,6 +97,10 @@ describe('parseRoute', () => {
   it('expone los enlaces centralizados', () => {
     expect(ROUTES.learning).toBe('#/aprender');
     expect(lessonHref('numeros')).toBe('#/aprender/numeros');
+    expect(characterHref('mayusculas', 'upper-a')).toBe('#/aprender/mayusculas/upper-a');
+    expect(traceCompleteHref('mayusculas', 'upper-a')).toBe(
+      '#/aprender/mayusculas/upper-a/completado',
+    );
     expect(drawingHref('letter-enye')).toBe('#/pizarra/dibujo/letter-enye');
   });
 });
@@ -85,5 +120,14 @@ describe('routeKey', () => {
       routeKey({ name: 'coloring', drawingId: 'letter-a' }),
     );
     expect(routeKey({ name: 'doodle' })).toBe('doodle');
+  });
+
+  it('distingue la celebración del ejercicio en curso', () => {
+    expect(
+      routeKey({ name: 'traceComplete', packId: 'mayusculas', characterId: 'upper-a' }),
+    ).toBe('trace-complete:mayusculas:upper-a');
+    expect(
+      routeKey({ name: 'traceComplete', packId: 'mayusculas', characterId: 'upper-a' }),
+    ).not.toBe(routeKey({ name: 'trace', packId: 'mayusculas', characterId: 'upper-a' }));
   });
 });

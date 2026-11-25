@@ -6,6 +6,7 @@ import { HomeScreen } from '@/modules/home/HomeScreen';
 import { LearningScreen } from '@/modules/learning/LearningScreen';
 import { LessonPreviewScreen } from '@/modules/learning/LessonPreviewScreen';
 import { TraceScreen } from '@/modules/tracing/TraceScreen';
+import { TraceCompleteScreen } from '@/modules/tracing/TraceCompleteScreen';
 import { DoodleScreen } from '@/modules/tracing/DoodleScreen';
 import { ProgressScreen } from '@/modules/progress/ProgressScreen';
 import { RewardsScreen } from '@/modules/rewards/RewardsScreen';
@@ -33,6 +34,8 @@ function pageTitle(route: AppRoute): string {
       const article = pack?.scriptId === 'digits' ? 'el' : 'la';
       return `Trazar ${article} ${glyph} · ${APP_NAME}`;
     }
+    case 'traceComplete':
+      return `¡Bravo! · ${APP_NAME}`;
     case 'doodle':
       return `Pizarra mágica · ${APP_NAME}`;
     case 'coloring': {
@@ -58,10 +61,17 @@ function screenForRoute(route: AppRoute) {
       return <LessonPreviewScreen packId={route.packId} />;
     case 'trace':
       return <TraceScreen packId={route.packId} characterId={route.characterId} />;
+    case 'traceComplete':
+      return <TraceCompleteScreen packId={route.packId} characterId={route.characterId} />;
     case 'doodle':
       return <DoodleScreen />;
     case 'coloring':
-      return <DoodleScreen drawingId={route.drawingId} />;
+      return (
+        <DoodleScreen
+          drawingId={route.drawingId}
+          returnToTrace={route.returnTrace}
+        />
+      );
     case 'progress':
       return <ProgressScreen />;
     case 'rewards':

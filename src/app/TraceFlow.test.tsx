@@ -1,13 +1,15 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CharacterTrace, TracePoint } from '@/modules/lessons/lesson.types';
 import { getCharacterTrace } from '@/modules/lessons/traces';
 import { getLessonPack } from '@/modules/lessons/content';
 import { samplePath } from '@/modules/tracing/traceGeometry';
 import { ProgressProvider } from '@/modules/progress/ProgressProvider';
-import { loadProgress, recordPractice } from '@/modules/progress/progress.repository';
+import { loadProgress, recordPractice, saveArtwork } from '@/modules/progress/progress.repository';
+import { createEmptyArtwork } from '@/modules/artworks/artwork.types';
 import { DB_NAME, closeDatabase } from '@/modules/storage/db';
 import { triggerResizeObservers } from '@/test/resizeObserver';
+import { traceCompleteHref } from './router';
 import { App } from './App';
 
 /**
@@ -262,20 +264,27 @@ describe('flujo de trazado de la A', () => {
 
     drawStroke(canvas, 2);
 
-    expect(await screen.findByRole('heading', { name: '¡Bravo!' })).toBeInTheDocument();
-    expect(screen.getAllByText(/la a está preciosa/i).length).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: /otra vez/i })).toBeInTheDocument();
-
-    const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByRole('heading', { name: '¡Muy bien!' })).toBeInTheDocument();
-    expect(within(dialog).getByText(/has conseguido un nuevo dibujo/i)).toBeInTheDocument();
-    expect(within(dialog).getByRole('link', { name: /quiero colorearlo/i })).toHaveAttribute(
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '¡Bravo!' }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText(/has completado la a/i)).toBeInTheDocument();
+    expect(screen.getByText('Avión')).toBeInTheDocument();
+    expect(screen.getByText(/has ganado una estrella/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /colorear mi dibujo/i })).toHaveAttribute(
       'href',
-      '#/pizarra/dibujo/letter-a',
+      '#/pizarra/dibujo/letter-a/desde/mayusculas/upper-a',
     );
-
-    fireEvent.click(within(dialog).getByRole('button', { name: /seguir aprendiendo/i }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByRole('link', { name: /repetir trazado/i })).toHaveAttribute(
+      'href',
+      '#/aprender/mayusculas/upper-a',
+    );
+    expect(screen.getByRole('link', { name: /siguiente letra: b/i })).toHaveAttribute(
+      'href',
+      '#/aprender/mayusculas/upper-b',
+    );
+    expect(window.location.hash).toBe('#/aprender/mayusculas/upper-a/completado');
+    expect(document.title).toBe('¡Bravo! · Aprende y Traza');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
     await waitFor(async () => {
       const progress = await loadProgress();
@@ -334,8 +343,12 @@ describe('flujo de trazado de la A', () => {
 
     drawStroke(canvas, 2, LANDSCAPE_RECT);
 
-    expect(await screen.findByRole('heading', { name: '¡Bravo!' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /otra vez/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '¡Bravo!' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /repetir trazado/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /colorear mi dibujo/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /siguiente letra: b/i })).toBeInTheDocument();
 
     await waitFor(async () => {
       const progress = await loadProgress();
@@ -399,8 +412,14 @@ describe('flujo de trazado de minúsculas y números', () => {
 
     drawStroke(canvas, 1, canvasRect, 'lower-a');
 
-    expect(await screen.findByRole('heading', { name: '¡Bravo!' })).toBeInTheDocument();
-    expect(screen.getAllByText(/la a está preciosa/i).length).toBeGreaterThan(0);
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '¡Bravo!' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/has completado la a/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /colorear mi dibujo/i })).toHaveAttribute(
+      'href',
+      '#/pizarra/dibujo/letter-a/desde/minusculas/lower-a',
+    );
 
     await waitFor(async () => {
       const progress = await loadProgress();
@@ -421,8 +440,24 @@ describe('flujo de trazado de minúsculas y números', () => {
 
     drawStroke(canvas, 0, canvasRect, 'digit-0');
 
-    expect(await screen.findByRole('heading', { name: '¡Bravo!' })).toBeInTheDocument();
-    expect(screen.getAllByText(/el 0 está genial/i).length).toBeGreaterThan(0);
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '¡Bravo!' }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText(/has completado el 0/i)).toBeInTheDocument();
+    expect(screen.getByText('Donut')).toBeInTheDocument();
+    expect(screen.getByText(/has ganado una estrella/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /colorear mi dibujo/i })).toHaveAttribute(
+      'href',
+      '#/pizarra/dibujo/number-0/desde/numeros/digit-0',
+    );
+    expect(screen.getByRole('link', { name: /repetir trazado/i })).toHaveAttribute(
+      'href',
+      '#/aprender/numeros/digit-0',
+    );
+    expect(screen.getByRole('link', { name: /siguiente número: 1/i })).toHaveAttribute(
+      'href',
+      '#/aprender/numeros/digit-1',
+    );
 
     await waitFor(async () => {
       const progress = await loadProgress();
@@ -430,6 +465,8 @@ describe('flujo de trazado de minúsculas y números', () => {
       expect(character?.packId).toBe('numeros');
       expect(character?.completions).toBe(1);
       expect(character?.lastResult).toBe('completed');
+      expect(progress.stars).toBe(1);
+      expect(progress.artworks['number-0']).toBeDefined();
     });
   });
 
@@ -445,7 +482,10 @@ describe('flujo de trazado de minúsculas y números', () => {
 
     drawDot(canvas, 1, 'lower-i');
 
-    expect(await screen.findByRole('heading', { name: '¡Bravo!' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '¡Bravo!' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/has completado la i/i)).toBeInTheDocument();
 
     await waitFor(async () => {
       const progress = await loadProgress();
@@ -457,7 +497,7 @@ describe('flujo de trazado de minúsculas y números', () => {
 });
 
 describe('recompensas al completar fichas', () => {
-  it('no celebra un dibujo repetido al completar la minúscula de la misma letra', async () => {
+  it('ofrece las tres opciones sin duplicar el dibujo al completar la minúscula de la misma letra', async () => {
     await recordPractice({
       packId: 'mayusculas',
       characterId: 'upper-a',
@@ -475,14 +515,19 @@ describe('recompensas al completar fichas', () => {
     await waitForNextStroke();
 
     drawStroke(canvas, 1, canvasRect, 'lower-a');
-    expect(await screen.findByRole('heading', { name: '¡Bravo!' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '¡Bravo!' }),
+    ).toBeInTheDocument();
 
-    await act(async () => {
-      await new Promise((resolve) => {
-        setTimeout(resolve, 120);
-      });
-    });
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    // La lámina ya estaba desbloqueada: no se anuncia como recompensa nueva.
+    expect(screen.getByText('¡Has ganado una estrella!')).toBeInTheDocument();
+    expect(screen.queryByText(/un dibujo nuevo/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /colorear mi dibujo/i })).toHaveAttribute(
+      'href',
+      '#/pizarra/dibujo/letter-a/desde/minusculas/lower-a',
+    );
+    expect(screen.getByRole('link', { name: /repetir trazado/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /siguiente letra: b/i })).toBeInTheDocument();
 
     const progress = await loadProgress();
     expect(progress.stars).toBe(2);
@@ -513,5 +558,267 @@ describe('recompensas al completar fichas', () => {
     );
     expect(screen.getByRole('group', { name: /elige un color/i })).toBeInTheDocument();
     expect(document.title).toBe('Colorear Donut · Aprende y Traza');
+  });
+});
+
+describe('pantalla de finalización del trazado', () => {
+  it('mantiene las tres opciones al repetir una letra ya completada sin dar otra estrella', async () => {
+    await recordPractice({
+      packId: 'mayusculas',
+      characterId: 'upper-a',
+      completed: true,
+      accuracy: 0.92,
+    });
+
+    renderAt('#/aprender/mayusculas/upper-a');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'La A' })).toBeInTheDocument();
+    const canvas = screen.getByLabelText(/zona para trazar la letra a/i) as HTMLCanvasElement;
+
+    drawStroke(canvas, 0);
+    await waitForNextStroke();
+    drawStroke(canvas, 1);
+    await waitForNextStroke();
+    drawStroke(canvas, 2);
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '¡Bravo!' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/has completado la a/i)).toBeInTheDocument();
+    expect(screen.getByText('¡Qué bien lo haces!')).toBeInTheDocument();
+    expect(screen.queryByText(/has ganado una estrella/i)).not.toBeInTheDocument();
+    expect(screen.getByText('Avión')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /colorear mi dibujo/i })).toHaveAttribute(
+      'href',
+      '#/pizarra/dibujo/letter-a/desde/mayusculas/upper-a',
+    );
+    expect(screen.getByRole('link', { name: /repetir trazado/i })).toHaveAttribute(
+      'href',
+      '#/aprender/mayusculas/upper-a',
+    );
+    expect(screen.getByRole('link', { name: /siguiente letra: b/i })).toHaveAttribute(
+      'href',
+      '#/aprender/mayusculas/upper-b',
+    );
+
+    await waitFor(async () => {
+      const progress = await loadProgress();
+      expect(progress.characters['upper-a']?.completions).toBe(2);
+      expect(progress.characters['upper-a']?.starsEarned).toBe(1);
+      expect(progress.stars).toBe(1);
+    });
+  });
+
+  it('mantiene las tres opciones al repetir un número completado sin dar otra estrella', async () => {
+    await recordPractice({
+      packId: 'numeros',
+      characterId: 'digit-0',
+      completed: true,
+      accuracy: 0.9,
+    });
+
+    renderAt('#/aprender/numeros/digit-0');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'El 0' })).toBeInTheDocument();
+    const canvas = screen.getByLabelText(/zona para trazar el número 0/i) as HTMLCanvasElement;
+
+    drawStroke(canvas, 0, canvasRect, 'digit-0');
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '¡Bravo!' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/has completado el 0/i)).toBeInTheDocument();
+    expect(screen.getByText('¡Qué bien lo haces!')).toBeInTheDocument();
+    expect(screen.queryByText(/has ganado una estrella/i)).not.toBeInTheDocument();
+    expect(screen.getByText('Donut')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /colorear mi dibujo/i })).toHaveAttribute(
+      'href',
+      '#/pizarra/dibujo/number-0/desde/numeros/digit-0',
+    );
+    expect(screen.getByRole('link', { name: /repetir trazado/i })).toHaveAttribute(
+      'href',
+      '#/aprender/numeros/digit-0',
+    );
+    expect(screen.getByRole('link', { name: /siguiente número: 1/i })).toHaveAttribute(
+      'href',
+      '#/aprender/numeros/digit-1',
+    );
+
+    await waitFor(async () => {
+      const progress = await loadProgress();
+      expect(progress.characters['digit-0']?.completions).toBe(2);
+      expect(progress.characters['digit-0']?.starsEarned).toBe(1);
+      expect(progress.stars).toBe(1);
+    });
+  });
+
+  it('ofrece el dibujo correcto para B, G, Ñ y 5', async () => {
+    const completed = [
+      { packId: 'mayusculas', characterId: 'upper-b', drawing: 'Ballena', href: 'letter-b' },
+      { packId: 'mayusculas', characterId: 'upper-g', drawing: 'Gato', href: 'letter-g' },
+      { packId: 'mayusculas', characterId: 'upper-ñ', drawing: 'Ñandú', href: 'letter-enye' },
+      { packId: 'numeros', characterId: 'digit-5', drawing: 'Cinco globos', href: 'number-5' },
+    ];
+
+    for (const item of completed) {
+      await recordPractice({
+        packId: item.packId,
+        characterId: item.characterId,
+        completed: true,
+        accuracy: 0.88,
+      });
+    }
+
+    renderAt(traceCompleteHref('mayusculas', 'upper-b'));
+    expect(await screen.findByText('Ballena')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /colorear mi dibujo/i })).toHaveAttribute(
+      'href',
+      '#/pizarra/dibujo/letter-b/desde/mayusculas/upper-b',
+    );
+
+    goTo(traceCompleteHref('mayusculas', 'upper-g'));
+    expect(await screen.findByText('Gato')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /colorear mi dibujo/i })).toHaveAttribute(
+      'href',
+      '#/pizarra/dibujo/letter-g/desde/mayusculas/upper-g',
+    );
+
+    goTo(traceCompleteHref('mayusculas', 'upper-ñ'));
+    expect(await screen.findByText('Ñandú')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /colorear mi dibujo/i })).toHaveAttribute(
+      'href',
+      '#/pizarra/dibujo/letter-enye/desde/mayusculas/upper-%C3%B1',
+    );
+    // El catálogo sigue el orden alfabético español: después de la Ñ viene la O.
+    expect(screen.getByRole('link', { name: /siguiente letra: o/i })).toHaveAttribute(
+      'href',
+      '#/aprender/mayusculas/upper-o',
+    );
+
+    goTo(traceCompleteHref('numeros', 'digit-5'));
+    expect(await screen.findByText('Cinco globos')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /colorear mi dibujo/i })).toHaveAttribute(
+      'href',
+      '#/pizarra/dibujo/number-5/desde/numeros/digit-5',
+    );
+  });
+
+  it('recupera los colores guardados y permite volver a la celebración', async () => {
+    await recordPractice({
+      packId: 'mayusculas',
+      characterId: 'upper-a',
+      completed: true,
+      accuracy: 0.93,
+    });
+    await saveArtwork({
+      ...createEmptyArtwork('letter-a'),
+      fills: { body: '#ff9fbe', window: '#cfeaff' },
+    });
+
+    renderAt(traceCompleteHref('mayusculas', 'upper-a'));
+
+    const colorLink = await screen.findByRole('link', { name: /colorear mi dibujo/i });
+    expect(colorLink).toHaveAttribute(
+      'href',
+      '#/pizarra/dibujo/letter-a/desde/mayusculas/upper-a',
+    );
+
+    goTo('#/pizarra/dibujo/letter-a/desde/mayusculas/upper-a');
+
+    expect(
+      await screen.findByRole('group', { name: /lámina para colorear: avión/i }),
+    ).toBeInTheDocument();
+
+    const body = document.querySelector('[data-layer="fills"] path[data-region-id="body"]');
+    const windowRegion = document.querySelector(
+      '[data-layer="fills"] path[data-region-id="window"]',
+    );
+    expect(body).toHaveAttribute('fill', '#ff9fbe');
+    expect(windowRegion).toHaveAttribute('fill', '#cfeaff');
+
+    const back = screen.getByRole('link', { name: 'Volver a la celebración' });
+    expect(back).toHaveAttribute('href', '#/aprender/mayusculas/upper-a/completado');
+
+    goTo('#/aprender/mayusculas/upper-a/completado');
+    expect(
+      await screen.findByRole('heading', { level: 1, name: '¡Bravo!' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /colorear mi dibujo/i })).toBeInTheDocument();
+  });
+
+  it('reinicia la sesión al repetir el trazado', async () => {
+    await recordPractice({
+      packId: 'mayusculas',
+      characterId: 'upper-a',
+      completed: true,
+      accuracy: 0.91,
+    });
+
+    renderAt(traceCompleteHref('mayusculas', 'upper-a'));
+
+    const repeatLink = await screen.findByRole('link', { name: /repetir trazado/i });
+    expect(repeatLink).toHaveAttribute('href', '#/aprender/mayusculas/upper-a');
+
+    goTo('#/aprender/mayusculas/upper-a');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'La A' })).toBeInTheDocument();
+    expect(screen.getByText(/baja desde la punta hacia la izquierda/i)).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Trazo 1 de 3' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 1, name: '¡Bravo!' })).not.toBeInTheDocument();
+  });
+
+  it('avanza al siguiente elemento con una sesión limpia', async () => {
+    await recordPractice({
+      packId: 'numeros',
+      characterId: 'digit-5',
+      completed: true,
+      accuracy: 0.9,
+    });
+
+    renderAt(traceCompleteHref('numeros', 'digit-5'));
+
+    const nextLink = await screen.findByRole('link', { name: /siguiente número: 6/i });
+    expect(nextLink).toHaveAttribute('href', '#/aprender/numeros/digit-6');
+
+    goTo('#/aprender/numeros/digit-6');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'El 6' })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Trazo 1 de 2' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 1, name: '¡Bravo!' })).not.toBeInTheDocument();
+  });
+
+  it('ofrece volver al listado al completar el último elemento', async () => {
+    await recordPractice({
+      packId: 'mayusculas',
+      characterId: 'upper-z',
+      completed: true,
+      accuracy: 0.9,
+    });
+    await recordPractice({
+      packId: 'numeros',
+      characterId: 'digit-9',
+      completed: true,
+      accuracy: 0.9,
+    });
+
+    renderAt(traceCompleteHref('mayusculas', 'upper-z'));
+
+    expect(await screen.findByText('Zorro')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /siguiente letra/i })).not.toBeInTheDocument();
+    expect(
+      screen
+        .getAllByRole('link', { name: /volver a las letras/i })
+        .every((link) => link.getAttribute('href') === '#/aprender/mayusculas'),
+    ).toBe(true);
+
+    goTo(traceCompleteHref('numeros', 'digit-9'));
+
+    expect(await screen.findByText('Nueve corazones')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /siguiente número/i })).not.toBeInTheDocument();
+    expect(
+      screen
+        .getAllByRole('link', { name: /volver a los números/i })
+        .every((link) => link.getAttribute('href') === '#/aprender/numeros'),
+    ).toBe(true);
   });
 });

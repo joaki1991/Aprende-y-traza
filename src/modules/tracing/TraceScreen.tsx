@@ -8,9 +8,7 @@ import { NotFoundScreen } from '@/app/NotFoundScreen';
 import { getLessonCharacter, getLessonPack } from '@/modules/lessons/content';
 import { getCharacterTrace } from '@/modules/lessons/traces';
 import type { CharacterTrace, TracePoint } from '@/modules/lessons/lesson.types';
-import { drawingHref, lessonHref } from '@/app/router';
-import { DrawingArtwork } from '@/modules/artworks/DrawingLayers';
-import { getDrawing } from '@/modules/artworks/drawings';
+import { lessonHref, traceCompleteHref } from '@/app/router';
 import { useProgress } from '@/modules/progress/progressContext';
 import {
   createTraceSession,
@@ -98,9 +96,8 @@ export function TraceScreen({ packId, characterId }: TraceScreenProps) {
   const timerRef = useRef<number | null>(null);
   const completionRecordedRef = useRef(false);
   const partialRecordedRef = useRef(false);
+  const roundRef = useRef(0);
   const mountedRef = useRef(true);
-  const [rewardDrawingId, setRewardDrawingId] = useState<string | null>(null);
-  const rewardButtonRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -108,12 +105,6 @@ export function TraceScreen({ packId, characterId }: TraceScreenProps) {
       mountedRef.current = false;
     };
   }, []);
-
-  useEffect(() => {
-    if (rewardDrawingId) {
-      rewardButtonRef.current?.focus();
-    }
-  }, [rewardDrawingId]);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {
@@ -155,7 +146,6 @@ export function TraceScreen({ packId, characterId }: TraceScreenProps) {
   }
 
   const currentStroke = trace.strokes[session.currentStrokeIndex];
-  const rewardDrawing = rewardDrawingId ? getDrawing(rewardDrawingId) : undefined;
   const stepsLabel = session.completed
     ? 'Ejercicio completado'
     : `Trazo ${Math.min(session.currentStrokeIndex + 1, trace.strokes.length)} de ${
@@ -223,15 +213,18 @@ export function TraceScreen({ packId, characterId }: TraceScreenProps) {
       });
       if (!completionRecordedRef.current) {
         completionRecordedRef.current = true;
+        const round = roundRef.current;
         void recordPractice({
           packId: pack.id,
           characterId: character.id,
           attempts: 1,
           completed: true,
           accuracy: traceSessionAccuracy(submission.state),
-        }).then((summary) => {
-          if (summary?.newDrawingId && mountedRef.current) {
-            setRewardDrawingId(summary.newDrawingId);
+        }).then(() => {
+          // Si la niña pulsa Repetir mientras se guarda, no debe saltar a la
+          // pantalla de finalización de la ronda anterior.
+          if (mountedRef.current && roundRef.current === round) {
+            window.location.hash = traceCompleteHref(pack.id, character.id);
           }
         });
       }
@@ -258,6 +251,7 @@ export function TraceScreen({ packId, characterId }: TraceScreenProps) {
   const handleRepeat = () => {
     clearTimer();
     recordIncompleteRound();
+    roundRef.current += 1;
     completionRecordedRef.current = false;
     partialRecordedRef.current = false;
     setSession(resetTraceSession(trace));
@@ -338,15 +332,7 @@ export function TraceScreen({ packId, characterId }: TraceScreenProps) {
                 ✦
               </span>
               <MochiCat className={styles.celebrationMochi} />
-              <h2>¡Bravo!</h2>
-              <p>
-                {article === 'el'
-                  ? `El ${character.glyph} está genial.`
-                  : `La ${character.glyph} está preciosa.`}
-              </p>
-              <button type="button" className={styles.again} onClick={handleRepeat}>
-                Otra vez
-              </button>
+              <p>¡Bravo! Preparando tu dibujo…</p>
             </div>
           ) : null}
         </div>
@@ -369,48 +355,6 @@ export function TraceScreen({ packId, characterId }: TraceScreenProps) {
           Volver
         </a>
       </div>
-
-      {rewardDrawing ? (
-        <div
-          className={styles.rewardOverlay}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="new-drawing-title"
-        >
-          <div className={styles.rewardCard}>
-            <span className={styles.rewardSparkle} aria-hidden="true">
-              ✦
-            </span>
-            <span
-              className={`${styles.rewardSparkle} ${styles.rewardSparkleTwo}`}
-              aria-hidden="true"
-            >
-              ✦
-            </span>
-            <div className={styles.rewardArt} aria-hidden="true">
-              <DrawingArtwork template={rewardDrawing} />
-            </div>
-            <h2 id="new-drawing-title">¡Muy bien!</h2>
-            <p>
-              Has conseguido un nuevo dibujo: <strong>{rewardDrawing.name}</strong>.
-            </p>
-            <a
-              ref={rewardButtonRef}
-              className={styles.rewardPrimary}
-              href={drawingHref(rewardDrawing.id)}
-            >
-              ¡Quiero colorearlo!
-            </a>
-            <button
-              type="button"
-              className={styles.rewardSecondary}
-              onClick={() => setRewardDrawingId(null)}
-            >
-              Seguir aprendiendo
-            </button>
-          </div>
-        </div>
-      ) : null}
     </Screen>
   );
 }

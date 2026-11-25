@@ -4,7 +4,7 @@ import { MochiCat } from '@/components/mascots/MochiCat';
 import { BigActionLink } from '@/components/ui/BigActionLink';
 import { LockIcon } from '@/components/icons/Icons';
 import { NotFoundScreen } from '@/app/NotFoundScreen';
-import { ROUTES } from '@/app/router';
+import { ROUTES, traceCompleteHref, type TraceOrigin } from '@/app/router';
 import { ArtworkBoard } from '@/modules/artworks/ArtworkBoard';
 import { PLAYGROUND_ARTWORK_ID } from '@/modules/artworks/artwork.types';
 import { getDrawing } from '@/modules/artworks/drawings';
@@ -14,9 +14,11 @@ import styles from './DoodleScreen.module.css';
 interface DoodleScreenProps {
   /** Lámina del catálogo; si falta, se abre la pizarra libre. */
   drawingId?: string;
+  /** Origen de la celebración, para que Volver regrese a ella. */
+  returnToTrace?: TraceOrigin;
 }
 
-export function DoodleScreen({ drawingId }: DoodleScreenProps) {
+export function DoodleScreen({ drawingId, returnToTrace }: DoodleScreenProps) {
   const { progress, status } = useProgress();
   const template = drawingId ? getDrawing(drawingId) : undefined;
 
@@ -24,8 +26,16 @@ export function DoodleScreen({ drawingId }: DoodleScreenProps) {
     return <NotFoundScreen />;
   }
 
-  const backHref = template ? ROUTES.rewards : ROUTES.home;
-  const backLabel = template ? 'Volver a recompensas' : 'Volver al inicio';
+  const backHref = template
+    ? returnToTrace
+      ? traceCompleteHref(returnToTrace.packId, returnToTrace.characterId)
+      : ROUTES.rewards
+    : ROUTES.home;
+  const backLabel = template
+    ? returnToTrace
+      ? 'Volver a la celebración'
+      : 'Volver a recompensas'
+    : 'Volver al inicio';
   const unlocked = !template || Boolean(progress.artworks[template.id]);
 
   return (

@@ -1,0 +1,297 @@
+.screen {
+  gap: 12px;
+}
+
+.hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 18px 16px;
+  overflow: hidden;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 6%, rgba(255, 239, 183, 0.8) 0, rgba(255, 239, 183, 0) 46%),
+    linear-gradient(160deg, #fffafc 0%, #ffe9f2 60%, #e5d9ff 100%);
+  border: 3px solid rgba(255, 255, 255, 0.95);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  animation: pop-in 0.35s var(--ease-bounce) both;
+}
+
+.mochi {
+  width: min(40vw, 132px);
+  margin-bottom: 2px;
+  animation: complete-bounce 1.6s var(--ease-bounce) infinite;
+}
+
+.glyph {
+  display: grid;
+  min-width: 96px;
+  place-items: center;
+  padding: 2px 24px 6px;
+  color: #a8476d;
+  font-family: var(--font-display);
+  font-size: clamp(3.2rem, 13vw, 4.6rem);
+  font-weight: 600;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.78);
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  border-radius: 28px;
+  box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.8), 0 5px 0 rgba(124, 92, 120, 0.08);
+}
+
+.lead {
+  color: var(--color-ink);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.reward {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  color: #8d5c1f;
+  font-size: 0.82rem;
+  font-weight: 800;
+  background: rgba(255, 249, 223, 0.9);
+  border: 2px solid rgba(243, 192, 77, 0.35);
+  border-radius: var(--radius-pill);
+}
+
+.reward[data-first='false'] {
+  color: var(--color-ink-soft);
+  background: rgba(255, 253, 249, 0.85);
+  border-color: rgba(107, 85, 104, 0.12);
+}
+
+.reward svg {
+  color: var(--color-butter-strong);
+}
+
+.drawingCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px 8px 8px;
+  background: rgba(255, 253, 249, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 5px 0 rgba(124, 92, 120, 0.06);
+}
+
+.drawingArt {
+  display: grid;
+  width: 84px;
+  flex: 0 0 auto;
+  aspect-ratio: 1 / 1;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.72);
+  border: 2px dashed rgba(169, 138, 230, 0.3);
+  border-radius: 50%;
+}
+
+.drawingArt svg {
+  width: 100%;
+  height: 100%;
+}
+
+.drawingCopy {
+  min-width: 0;
+}
+
+.drawingCopy span {
+  display: block;
+  color: var(--color-ink-faint);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.drawingCopy strong {
+  display: block;
+  overflow: hidden;
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.secondary {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 12px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  border-radius: var(--radius-pill);
+  transition:
+    transform 0.18s var(--ease-bounce),
+    box-shadow 0.18s var(--ease-bounce);
+}
+
+.repeat {
+  color: #a8476d;
+  background: linear-gradient(135deg, #ffeaf3 0%, #ffc7dc 100%);
+  box-shadow: 0 6px 0 #f4aec8, 0 12px 22px rgba(124, 92, 120, 0.08);
+}
+
+.next {
+  color: #1f7c60;
+  background: linear-gradient(135deg, #effcf7 0%, #bdeedc 100%);
+  box-shadow: 0 6px 0 #a0e0cb, 0 12px 22px rgba(124, 92, 120, 0.08);
+}
+
+.secondary:hover {
+  transform: translateY(-2px);
+}
+
+.secondary:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 rgba(124, 92, 120, 0.14);
+}
+
+.nextGlyph {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.66);
+  border-radius: 50%;
+}
+
+.hint {
+  color: var(--color-ink-faint);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.sparkle {
+  position: absolute;
+  top: 12%;
+  left: 8%;
+  color: var(--color-butter-strong);
+  font-size: 1.4rem;
+  animation: twinkle 2.4s ease-in-out infinite;
+}
+
+.sparkleTwo {
+  top: auto;
+  right: 8%;
+  bottom: 18%;
+  left: auto;
+  color: var(--color-lilac-strong);
+  font-size: 1.05rem;
+  animation-delay: 0.8s;
+}
+
+@keyframes complete-bounce {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(2deg);
+  }
+}
+
+@media (min-width: 600px) and (min-aspect-ratio: 1/1) {
+  .screen {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(250px, 0.9fr);
+    grid-template-areas:
+      'header header'
+      'hero drawing'
+      'hero color'
+      'hero actions'
+      'hero hint';
+    align-content: center;
+    align-items: center;
+    gap: 10px 20px;
+  }
+
+  .screen > header {
+    grid-area: header;
+  }
+
+  .hero {
+    grid-area: hero;
+    align-self: stretch;
+    justify-content: center;
+    padding: 10px 16px;
+  }
+
+  .mochi {
+    width: min(24vw, 150px);
+  }
+
+  .glyph {
+    font-size: clamp(2.8rem, 7vw, 4rem);
+  }
+
+  .drawingCard {
+    grid-area: drawing;
+  }
+
+  .screen > a {
+    grid-area: color;
+  }
+
+  .actions {
+    grid-area: actions;
+  }
+
+  .hint {
+    grid-area: hint;
+  }
+}
+
+@media (max-height: 540px) and (min-aspect-ratio: 1/1) {
+  .mochi {
+    width: min(20vw, 110px);
+  }
+
+  .glyph {
+    font-size: 2.4rem;
+  }
+
+  .lead {
+    font-size: 0.9rem;
+  }
+
+  .drawingArt {
+    width: 66px;
+  }
+
+  .secondary {
+    min-height: 50px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero,
+  .mochi,
+  .sparkle,
+  .sparkleTwo {
+    animation: none;
+  }
+}
