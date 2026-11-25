@@ -47,6 +47,22 @@ describe('App', () => {
     );
   });
 
+  it('mantiene el control de música y su preferencia al cambiar de pantalla', async () => {
+    renderAt('#/');
+
+    const toggle = screen.getByRole('button', { name: 'Silenciar música' });
+    fireEvent.click(toggle);
+
+    expect(screen.getByRole('button', { name: 'Activar música' })).toBe(toggle);
+    expect(window.localStorage.getItem('aprende-y-traza.music.muted')).toBe('true');
+
+    window.location.hash = '#/aprender';
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await screen.findByRole('heading', { name: 'Aprender' });
+
+    expect(screen.getByRole('button', { name: 'Activar música' })).toBe(toggle);
+  });
+
   it('navega a la selección de contenidos mediante el hash', async () => {
     renderAt('#/');
 

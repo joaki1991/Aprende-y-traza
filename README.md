@@ -2,7 +2,7 @@
 
 Aplicación educativa **kawaii** para que una niña de unos 4 años aprenda a trazar letras mayúsculas, minúsculas y números. Funciona como PWA instalable y está preparada para empaquetarse como app Android con Capacitor.
 
-> **Estado actual: Sprint 3 completado.** La app incluye el catálogo completo de **64 fichas** (27 mayúsculas, 27 minúsculas y 10 números), todas trazables con el mismo motor, y un sistema de recompensas con **37 láminas para colorear** asociadas a las letras y los números. Cada ficha completada por primera vez da una estrella; cada letra o número desbloquea su dibujo, que se colorea por regiones independientes en la pizarra y se decora con pegatinas interactivas. El Sprint 1.5 dejó la interfaz adaptada a vertical y horizontal, y la A mayúscula conserva exactamente la geometría aprobada en el Sprint 1. Los niveles progresivos, el sonido y el panel adulto llegan en los siguientes sprints.
+> **Estado actual: Sprint 6 en curso (sin publicar).** La app incluye el catálogo completo de **64 fichas** (27 mayúsculas, 27 minúsculas y 10 números), todas trazables con el mismo motor, y un sistema de recompensas con **37 láminas para colorear** asociadas a las letras y los números. Cada ficha completada por primera vez da una estrella; cada letra o número desbloquea su dibujo, que se colorea por regiones independientes en la pizarra y se decora con pegatinas interactivas. Los sprints 4 y 5 publicados mejoraron las ilustraciones y el cierre del ejercicio; el Sprint 6 añade música ambiental local y una PWA instalada más inmersiva. Los niveles progresivos y el panel adulto llegan en los siguientes sprints.
 
 ---
 
@@ -20,9 +20,10 @@ Aplicación educativa **kawaii** para que una niña de unos 4 años aprenda a tr
 - Pegatinas interactivas sobre la pizarra: añadir varias, arrastrar, cambiar tamaño, quitar y conservar posición y tamaño al reabrir.
 - Progreso y composiciones en IndexedDB, sin registro ni datos personales; el ejercicio guarda intentos, rondas completadas, precisión y fecha, y la pizarra guarda colores, trazos y pegatinas.
 - PWA con manifest, iconos, service worker y funcionamiento offline.
+- Música ambiental local en bucle, con botón global de silencio y preferencia persistida; respeta el bloqueo de reproducción automática del móvil.
 - Proyecto Android generado con Capacitor, orientación libre, iconos y splash propios.
 - Diseño adaptable a vertical y horizontal (móvil, tablet y ventana de escritorio) con safe areas y sin scroll horizontal.
-- 144 pruebas automatizadas, TypeScript estricto, ESLint y build de producción verificado.
+- 173 pruebas automatizadas, TypeScript estricto, ESLint y build de producción verificado.
 
 ## Requisitos
 
@@ -114,6 +115,7 @@ Notas:
 ├── docs/                    Arquitectura, decisiones y validación
 ├── licenses/                Licencias de las tipografías (OFL)
 ├── public/
+│   ├── audio/               Música ambiental local y su guía de sustitución
 │   ├── icons/               Iconos PWA, favicons y Apple Touch Icon
 │   └── robots.txt
 ├── scripts/
@@ -124,6 +126,7 @@ Notas:
 │   ├── components/          UI reutilizable: layout, iconos, mascota, botones
 │   ├── modules/
 │   │   ├── artworks/        Pizarra, láminas SVG, rellenos y pegatinas
+│   │   ├── audio/           Reproductor único, preferencia y botón de silencio
 │   │   ├── home/            Pantalla principal
 │   │   ├── learning/        Selección y vista previa de paquetes
 │   │   ├── lessons/         Modelo, contenido y trazos SVG (`traces/`)
@@ -187,13 +190,30 @@ Rutas útiles: `#/recompensas`, `#/pizarra` y `#/pizarra/dibujo/letter-a`.
 - **Safe areas:** padding con `env(safe-area-inset-*)` para notch, barras y gestos del sistema.
 - Al girar no se recarga la app ni se pierde la ronda: Android conserva la actividad y React mantiene el estado.
 
+## Música ambiental
+
+- La música vive en `public/audio/background-music.mp3` y se empaqueta con la app; funciona sin conexión y el service worker la precarga.
+- Un único reproductor `HTMLAudioElement` se crea de forma diferida y se comparte desde `AmbientMusicProvider`, por encima del router: cambiar de pantalla no reinicia la canción.
+- El botón de altavoz está fijo en la esquina superior derecha de todas las pantallas, con iconos de altavoz activo y silenciado, y no tapa los controles del ejercicio ni de la pizarra.
+- Silenciar pausa el mismo elemento y volver a activar reanuda en el mismo instante. La preferencia se guarda en `localStorage` (`aprende-y-traza.music.muted`) y se conserva entre sesiones.
+- Si el navegador bloquea la reproducción automática, la app no muestra errores: espera al primer toque o tecla real y reintenta. Al volver del segundo plano reanuda si la música sigue activa.
+- Para sustituir la melodía, sigue `public/audio/README.md`. Si el archivo falta, la app sigue funcionando con normalidad.
+
+## PWA instalada y pantalla completa
+
+- El manifest declara `display: standalone`, `display_override` con `standalone`/`minimal-ui`, `orientation: any`, colores pastel e iconos `any` y `maskable`.
+- La app instalada oculta la barra de direcciones, pero no fuerza `fullscreen`: las barras de estado y navegación del sistema pueden seguir visibles. Es la limitación real de Android e iOS.
+- `viewport-fit=cover` y las variables `--safe-*` con `env(safe-area-inset-*)` mantienen los controles fuera del notch, las esquinas redondeadas y las barras del sistema.
+- Las alturas usan `100vh` como respaldo y `100dvh` cuando está disponible; se evita el scroll horizontal accidental y el rebote vertical.
+- En el navegador normal la experiencia sigue siendo la misma, y el WebView de Capacitor conserva el comportamiento de la app Android.
+
 ## Privacidad y offline
 
 - Sin backend, sin registro, sin cuentas y sin datos personales.
 - Sin anuncios, analítica, píxeles de seguimiento ni enlaces externos.
 - Sin Google Fonts, CDNs ni APIs remotas: fuentes, SVG, iconos y datos están en el paquete.
-- El progreso se guarda solo en IndexedDB, en el dispositivo.
-- La versión web funciona offline tras la primera carga; la versión Android lleva los assets dentro del APK.
+- El progreso se guarda solo en IndexedDB, en el dispositivo. La preferencia de música usa `localStorage`.
+- La versión web funciona offline tras la primera carga, incluida la música; la versión Android lleva los assets dentro del APK.
 - No hay compras ni servicios de pago.
 
 Las tipografías **Fredoka** y **Nunito** se distribuyen bajo SIL Open Font License 1.1. Las licencias están en `licenses/`.
@@ -207,12 +227,14 @@ npm run test:run
 npm run build
 ```
 
-Resultados de referencia del Sprint 3: [`docs/sprint-3.md`](docs/sprint-3.md). El Sprint 2 queda documentado en [`docs/sprint-2.md`](docs/sprint-2.md), el Sprint 1.5 en [`docs/sprint-1.5.md`](docs/sprint-1.5.md), el Sprint 1 en [`docs/sprint-1.md`](docs/sprint-1.md) y el Sprint 0 en [`docs/sprint-0.md`](docs/sprint-0.md).
+Resultados de referencia del Sprint 3: [`docs/sprint-3.md`](docs/sprint-3.md). Las ilustraciones renovadas del Sprint 4 están en [`docs/sprint-4-ilustraciones.md`](docs/sprint-4-ilustraciones.md). El Sprint 2 queda documentado en [`docs/sprint-2.md`](docs/sprint-2.md), el Sprint 1.5 en [`docs/sprint-1.5.md`](docs/sprint-1.5.md), el Sprint 1 en [`docs/sprint-1.md`](docs/sprint-1.md) y el Sprint 0 en [`docs/sprint-0.md`](docs/sprint-0.md).
 
 ## Documentación
 
 - [`docs/architecture.md`](docs/architecture.md): arquitectura, capas, flujos y guías de extensión.
 - [`docs/technical-decisions.md`](docs/technical-decisions.md): registro de decisiones técnicas (ADR).
+- [`docs/sprint-6.md`](docs/sprint-6.md): música ambiental, PWA inmersiva, pruebas y limitaciones.
+- [`docs/sprint-4-ilustraciones.md`](docs/sprint-4-ilustraciones.md): renovación de láminas y licencias.
 - [`docs/sprint-3.md`](docs/sprint-3.md): recompensas, 37 láminas, pizarra de relleno y pegatinas.
 - [`docs/sprint-2.md`](docs/sprint-2.md): catálogo completo, geometrías, arcos, puntos y verificación.
 - [`docs/sprint-1.5.md`](docs/sprint-1.5.md): orientación adaptable, distribuciones y verificación.

@@ -55,6 +55,7 @@ main.tsx
               ├── modules/progress (provider + repositorio)
               ├── modules/storage/db
               ├── modules/rewards
+              ├── modules/audio (música ambiental)
               └── modules/tracing
 ```
 
@@ -245,6 +246,20 @@ Separación deliberada:
 
 `rewards.ts` define el catálogo de pegatinas y los hitos de estrellas (0, 1, 3, 5, 8, 12). `StickerArt.tsx` dibuja cada pegatina en SVG local. `RewardsScreen.tsx` es la galería «Recompensas» con pestañas Dibujos y Pegatinas: las láminas bloqueadas se muestran en silueta con su pista («Completa la A»), las desbloqueadas enlazan a la pizarra y las coloreadas muestran previsualización y «Continuar». Las recompensas son derivadas del progreso: las pegatinas se desbloquean con estrellas y las láminas con `artworks`; no se guardan catálogos aparte y no hay compras ni azar.
 
+### Audio
+
+`modules/audio/` contiene el único reproductor de música ambiental de la app:
+
+- `musicPlayer.ts`: lógica sin React. Crea un solo `HTMLAudioElement` de forma diferida (`new Audio()`), lo configura en bucle con volumen `0.24`, gestiona los rechazos de `play()` y pausa/reanuda con `visibilitychange`.
+- `musicPreferences.ts`: guarda la preferencia de silencio en `localStorage` (`aprende-y-traza.music.muted`), con acceso defensivo si el navegador bloquea el almacenamiento.
+- `musicContext.ts`: contexto y hook `useAmbientMusic` sobre `useSyncExternalStore`.
+- `AmbientMusicProvider.tsx`: monta el reproductor una sola vez por encima del router de rutas.
+- `MusicToggle.tsx`: botón fijo en la esquina superior derecha, con iconos de altavoz y altavoz silenciado, `aria-pressed` y etiqueta en español.
+
+El archivo musical vive en `public/audio/background-music.mp3` y se sirve con la app; el service worker lo precarga. Si el archivo falta, el reproductor marca `unavailable` y la app sigue funcionando. Las instrucciones para sustituirlo están en `public/audio/README.md`.
+
+La reproducción automática se intenta al arrancar. Si el navegador la bloquea, no se muestra ningún error: se registra un gesto real (`pointerdown` o `keydown`) y se reintenta. Silenciar pausa el mismo elemento y volver a activar lo reanuda en el mismo instante, sin reiniciar la canción. Al pasar a segundo plano se pausa y al volver se reanuda si la preferencia sigue activa.
+
 ### Storage
 
 `storage/db.ts` es una capa mínima y sin dependencias:
@@ -255,17 +270,19 @@ Separación deliberada:
 - Operaciones `getRecord`, `getAllRecords`, `putRecord`, `deleteRecord`.
 - Errores propagados para que la UI muestre estados amables.
 
-`settings` está preparado para volumen, silencio y preferencias de accesibilidad; aún no se usa.
+`settings` sigue reservado para preferencias futuras de accesibilidad; la música usa `localStorage` porque es una preferencia síncrona y no necesita esperar a IndexedDB.
 
 ### PWA
 
 - `vite-plugin-pwa` en modo `generateSW` con `registerType: 'autoUpdate'`.
 - Registro manual (`injectRegister: null`) en `registerPwa.ts`.
 - Solo se registra en producción web y nunca en Capacitor.
-- Precache de JS, CSS, HTML, SVG, PNG, ICO, webmanifest, WOFF2 y WAV.
+- Precache de JS, CSS, HTML, SVG, PNG, ICO, webmanifest, WOFF2, WAV, MP3 y OGG, con un límite de 5 MiB por archivo para la música.
 - `navigateFallback: index.html` y limpieza de cachés antiguas.
-- Manifest: nombre, colores, orientación libre (`any`), iconos `any` y `maskable`.
-- `viewport-fit=cover` y tokens de safe area para notch y barras del sistema.
+- Manifest: nombre, colores, `display: standalone`, `display_override` con `standalone`/`minimal-ui`, orientación libre (`any`), iconos `any` y `maskable`.
+- La app instalada oculta la interfaz del navegador, pero no fuerza `fullscreen`: en Android e iOS las barras del sistema pueden seguir visibles o aparecer al deslizar. No se intenta ocultarlas con técnicas no soportadas.
+- `viewport-fit=cover` en el viewport y tokens `--safe-*` con `env(safe-area-inset-*)` para notch, esquinas redondeadas y barras del sistema.
+- Alturas con `100vh` como respaldo y `100dvh` cuando está disponible; `#root` y `body` ocupan el alto real y se evita el scroll horizontal accidental.
 
 ### Native
 
@@ -300,13 +317,16 @@ Separación deliberada:
 | Trazo rechazado | Mensaje amable con la pista concreta y reinicio automático |
 | Ficha sin trazos | Pantalla «¡Muy pronto!» con vuelta al listado (solo si se declara un carácter sin `CharacterTrace`) |
 | PWA no registrable | Aviso en consola; la app sigue funcionando |
+| Reproducción automática bloqueada | Sin error visible; se reintenta tras un toque o tecla real |
+| Archivo de música ausente o no decodificable | Aviso en consola; el botón mantiene la preferencia y la app sigue funcionando |
+| `localStorage` bloqueado | La preferencia de música dura solo la sesión actual |
 
 ## 8. Pruebas
 
 - Vitest 4 + jsdom + Testing Library.
-- `src/test/setup.ts`: `jest-dom`, `fake-indexeddb/auto`, limpieza tras cada test, `ResizeObserver` controlable, `scrollTo` y un contexto Canvas 2D mínimo para jsdom.
+- `src/test/setup.ts`: `jest-dom`, `fake-indexeddb/auto`, limpieza tras cada test (incluido `localStorage`), `ResizeObserver` controlable, `scrollTo`, contexto Canvas 2D mínimo y dobles inofensivos de `play`/`pause` para jsdom.
 - `src/test/resizeObserver.ts`: doble que conserva los observadores activos y permite dispararlos con `triggerResizeObservers()` para simular giros y redimensionados.
-- 15 archivos, 156 pruebas actualmente:
+- 18 archivos, 173 pruebas actualmente:
   - Router y rutas (incluidas la celebración `…/completado`, la lámina `#/pizarra/dibujo/:id` y la vuelta a la celebración).
   - Contenidos (64 caracteres, ids únicos, Ñ, palabras).
   - Catálogo de los 64 trazos: cobertura exacta, ids únicos, orden, extremos, límites del tablero, arcos, puntos de i/j, A intacta, Ñ, autotrazado, recorrido inverso, saltos de orden y garabatos.
@@ -320,8 +340,10 @@ Separación deliberada:
   - Recompensas (hitos, desbloqueo, galería de dibujos).
   - Integración de la app y del flujo A → ejercicio → finalización → IndexedDB, incluida la finalización tras girar a horizontal, una minúscula, un número y el punto de la i.
   - Finalización del trazado: tres acciones en primera ronda y en repeticiones, dibujo correcto para letras y números, colores guardados recuperados, sesión limpia al repetir o avanzar, último elemento y estrellas sin duplicar.
+  - Música ambiental: reproducción en bucle, un solo reproductor, silencio persistido, reanudación sin reinicio, pausa al ocultar la app, gesto tras autoplay bloqueado, archivo ausente y botón global.
   - Pantallas principales en viewports horizontales.
   - Guarda de configuración de orientación (manifest Android, manifest PWA y viewport).
+  - Guardas de la PWA instalada: `display`/`display_override`, colores e iconos, precache de MP3/OGG, `viewport-fit=cover`, alturas `100dvh`, áreas seguras y ausencia de scroll lateral.
 
 Criterio: la lógica nueva debe llegar con pruebas; los errores y datos corruptos también se prueban. La interacción táctil real se verifica en Chromium; jsdom solo aporta dobles de Canvas.
 

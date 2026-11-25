@@ -4,6 +4,8 @@ Plan de sprints secuenciales. Cada sprint termina con una demo verificable, prue
 
 Leyenda: ✅ completado · 🚧 en curso · ⏳ pendiente
 
+> **Actualización (2026-11-25):** el repositorio ya completó y publicó el flujo de lecciones, las láminas del abecedario y la finalización del trazado. El **Sprint 6 en curso** es «Música ambiental y PWA inmersiva»; las fichas de recompensas, sonido y PWA que aparecen más abajo se replanificarán después de este sprint.
+
 ## Resumen
 
 | Sprint | Objetivo | Estado |

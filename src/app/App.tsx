@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { getDrawing } from '@/modules/artworks/drawings';
 import { getLessonCharacter, getLessonPack } from '@/modules/lessons/content';
 import { AppShell } from '@/components/layout/AppShell';
+import { AmbientMusicProvider } from '@/modules/audio/AmbientMusicProvider';
+import { MusicToggle } from '@/modules/audio/MusicToggle';
 import { HomeScreen } from '@/modules/home/HomeScreen';
 import { LearningScreen } from '@/modules/learning/LearningScreen';
 import { LessonPreviewScreen } from '@/modules/learning/LessonPreviewScreen';
@@ -91,10 +93,13 @@ export function App() {
   }, [route]);
 
   return (
-    <AppShell>
-      <div className={styles.route} key={currentKey}>
-        {screenForRoute(route)}
-      </div>
-    </AppShell>
+    <AmbientMusicProvider>
+      <AppShell>
+        <MusicToggle />
+        <div className={styles.route} key={currentKey}>
+          {screenForRoute(route)}
+        </div>
+      </AppShell>
+    </AmbientMusicProvider>
   );
 }

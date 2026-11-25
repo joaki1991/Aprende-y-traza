@@ -7,6 +7,7 @@ import { resetResizeObservers, ResizeObserverStub } from './resizeObserver';
 afterEach(() => {
   cleanup();
   resetResizeObservers();
+  window.localStorage.clear();
   window.location.hash = '';
 });
 
@@ -51,4 +52,18 @@ function createCanvasContextStub(): CanvasRenderingContext2D {
 Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
   configurable: true,
   value: () => createCanvasContextStub(),
+});
+
+/**
+ * jsdom no implementa la reproducción de audio. Se silencia con un doble
+ * inofensivo; las pruebas de música inyectan su propio reproductor.
+ */
+Object.defineProperty(HTMLMediaElement.prototype, 'play', {
+  configurable: true,
+  value: vi.fn(() => Promise.resolve()),
+});
+
+Object.defineProperty(HTMLMediaElement.prototype, 'pause', {
+  configurable: true,
+  value: vi.fn(),
 });

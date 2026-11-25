@@ -585,3 +585,51 @@ La puntuación es `0.45 × cobertura + 0.35 × precisión + 0.20 × dirección`.
 - Las regiones que Fluent diseña como anillos o patrones pueden agrupar varios subcaminos; se conservan como una región para que el relleno sea coherente.
 - Los ids `part-NN` cambian respecto a las láminas anteriores; los rellenos antiguos se conservan en IndexedDB y dejan de mostrarse hasta que se repinte la lámina.
 
+---
+
+## ADR-034 — Música ambiental con un único `HTMLAudioElement` y preferencia en `localStorage`
+
+**Fecha:** 2026-11-25 · **Estado:** aceptada
+
+**Contexto:** se quiere una melodía infantil continua que no se corte al navegar y que pueda silenciarse desde cualquier pantalla. Debe funcionar offline, respetar el bloqueo de reproducción automática de los móviles y no añadir dependencias ni tocar el esquema de progreso.
+
+**Decisión:**
+
+- Un solo `HTMLAudioElement` creado de forma diferida por `createMusicPlayer()`, con `loop = true`, `preload = 'auto'` y volumen `0.24`.
+- El archivo se sirve desde `public/audio/background-music.mp3` y se precarga con el service worker.
+- `AmbientMusicProvider` se monta una vez por encima del router; `MusicToggle` usa `useSyncExternalStore` para reflejar el estado real.
+- La preferencia de silencio se guarda en `localStorage` (`aprende-y-traza.music.muted`). No se usa IndexedDB porque es un dato síncrono, diminuto y ajeno al progreso educativo.
+- Si `play()` falla por bloqueo de autoplay, no se muestra ningún error: se espera a un `pointerdown` o `keydown` real y se reintenta. Silenciar pausa el mismo elemento; activar lo reanuda sin reiniciar.
+- `visibilitychange` pausa al ocultar y reanuda al volver si la preferencia sigue activa.
+- El fallo de carga o formato se trata como `unavailable`: aviso en consola y la app continúa.
+
+**Consecuencias:**
+
+- No hay reproductores duplicados ni reinicios al cambiar de ruta.
+- La música no arranca si la niña la había silenciado; el botón muestra el altavoz tachado.
+- En navegadores que bloquean el autoplay, la música empieza en el primer toque real, no antes.
+- El archivo musical se sustituye sin tocar código si conserva el nombre; para OGG hay que cambiar `MUSIC_SOURCE`.
+- La licencia del archivo aportado debe verificarse antes de distribuir la app.
+
+---
+
+## ADR-035 — PWA `standalone` e inmersión con áreas seguras, sin forzar `fullscreen`
+
+**Fecha:** 2026-11-25 · **Estado:** aceptada
+
+**Contexto:** al instalar la PWA en el móvil se quiere ocultar la interfaz del navegador y aprovechar la pantalla, manteniendo el diseño vertical/horizontal y la compatibilidad con Android, iOS y Capacitor.
+
+**Decisión:**
+
+- Mantener `display: 'standalone'` con `display_override: ['standalone', 'minimal-ui']` y `orientation: 'any'`.
+- Usar `viewport-fit=cover`, `env(safe-area-inset-*)` y alturas con `100vh` de respaldo y `100dvh` cuando el navegador lo admite.
+- Reservar espacio para el botón global de música dentro de la columna del encabezado y respetar las áreas seguras.
+- No usar `fullscreen` ni trucos no soportados para esconder barras del sistema.
+
+**Consecuencias:**
+
+- En Android/Chrome instalada desaparece la barra de direcciones; la barra de estado y la de navegación del sistema pueden seguir visibles o aparecer al deslizar. En iOS, Safari usa `standalone` y mantiene su barra de estado; `display_override` puede ignorarse.
+- La app sigue funcionando igual desde el navegador normal y en el WebView de Capacitor.
+- El contenido no queda bajo el notch ni bajo las esquinas redondeadas; los controles principales mantienen al menos 44–56 px.
+- No se promete una pantalla completamente limpia de barras del sistema porque ningún navegador lo garantiza.
+

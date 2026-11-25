@@ -117,6 +117,26 @@ export function CloudIcon(props: IconProps) {
   );
 }
 
+export function VolumeIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M4 9.6h3.1L12 5.5v13L7.1 14.4H4V9.6Z" />
+      <path d="M15.6 9.2a4 4 0 0 1 0 5.6" />
+      <path d="M18.3 6.5a7.7 7.7 0 0 1 0 11" />
+    </IconBase>
+  );
+}
+
+export function VolumeOffIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M4 9.6h3.1L12 5.5v13L7.1 14.4H4V9.6Z" />
+      <path d="m16.2 9.7 4.6 4.6" />
+      <path d="m20.8 9.7-4.6 4.6" />
+    </IconBase>
+  );
+}
+
 export function SparkleIcon(props: IconProps) {
   return (
     <IconBase {...props}>

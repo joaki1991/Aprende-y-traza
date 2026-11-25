@@ -62,7 +62,11 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest,woff2,wav}'],
+        globPatterns: [
+          '**/*.{js,css,html,svg,png,ico,webmanifest,woff2,wav,mp3,ogg}',
+        ],
+        // La música ambiental puede superar el límite por defecto de 2 MiB.
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
       },

@@ -1,0 +1,73 @@
+/*
+ * Botón de música: fijo en la esquina superior derecha del contenido, dentro
+ * de la columna reservada del encabezado. No tapa controles de trazado ni de
+ * coloreado y respeta las áreas seguras.
+ */
+.toggle {
+  position: fixed;
+  top: calc(14px + var(--safe-top));
+  right: calc(max(18px, (100vw - var(--content-max)) / 2 + 18px) + var(--safe-right));
+  z-index: 50;
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  color: #b1587e;
+  background: rgba(255, 253, 249, 0.92);
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  border-radius: 50%;
+  box-shadow:
+    0 5px 0 rgba(124, 92, 120, 0.1),
+    0 8px 18px rgba(124, 92, 120, 0.14);
+  backdrop-filter: blur(6px);
+  touch-action: manipulation;
+  transition:
+    transform 0.18s var(--ease-bounce),
+    box-shadow 0.18s var(--ease-bounce),
+    color 0.18s var(--ease-soft);
+}
+
+.toggle[data-state='muted'] {
+  color: var(--color-ink-faint);
+  background: rgba(255, 253, 249, 0.82);
+}
+
+.toggle[data-unavailable='true'] {
+  color: var(--color-ink-faint);
+  opacity: 0.78;
+}
+
+.toggle:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 7px 0 rgba(124, 92, 120, 0.1),
+    0 12px 22px rgba(124, 92, 120, 0.16);
+}
+
+.toggle:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 rgba(124, 92, 120, 0.12);
+}
+
+/*
+ * En horizontal el armazón es más ancho: se alinea el botón con su borde
+ * derecho para que siga quedando en la columna del encabezado.
+ */
+@media (min-width: 720px) and (min-aspect-ratio: 1/1) {
+  .toggle {
+    top: calc(16px + var(--safe-top));
+    right: calc(max(28px, (100vw - 1120px) / 2 + 28px) + var(--safe-right));
+  }
+}
+
+@media (min-width: 1280px) and (min-aspect-ratio: 1/1) {
+  .toggle {
+    right: calc(max(28px, (100vw - 1200px) / 2 + 28px) + var(--safe-right));
+  }
+}
+
+@media (max-height: 540px) and (min-aspect-ratio: 1/1) {
+  .toggle {
+    top: calc(8px + var(--safe-top));
+  }
+}

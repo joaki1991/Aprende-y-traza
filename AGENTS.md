@@ -7,7 +7,7 @@ Guía para agentes de OpenCode y para cualquier persona que contribuya a **Apren
 - App educativa kawaii para una niña de ~4 años: trazar mayúsculas, minúsculas y números.
 - Interfaz en **español**; identificadores de código en **inglés**.
 - Prioridad absoluta: **móvil Android**, con diseño completo para vertical y horizontal, botones grandes, lectura mínima y uso con dedos pequeños.
-- Estado actual: **Sprint 3 completado**. El motor de trazado está implementado y las 64 fichas (27 mayúsculas, 27 minúsculas y 10 números) están registradas y son trazables. Toda la interfaz funciona en vertical y horizontal. El sistema de estrellas y la galería de Recompensas están activos, con 37 láminas SVG para colorear por regiones y pegatinas interactivas en la pizarra. No implementes niveles progresivos, sonido, panel adulto ni funcionalidades de sprints futuros sin que se pida explícitamente.
+- Estado actual: **Sprint 6 en curso (sin publicar)**. El motor de trazado está implementado y las 64 fichas (27 mayúsculas, 27 minúsculas y 10 números) están registradas y son trazables. Toda la interfaz funciona en vertical y horizontal. El sistema de estrellas y la galería de Recompensas están activos, con 37 láminas SVG para colorear por regiones y pegatinas interactivas en la pizarra. El Sprint 6 añade música ambiental local y la experiencia PWA inmersiva. No implementes niveles progresivos, panel adulto ni funcionalidades de sprints futuros sin que se pida explícitamente.
 
 ## 2. Reglas irrenunciables
 
